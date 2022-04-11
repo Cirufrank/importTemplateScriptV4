@@ -2,9 +2,9 @@
 /*
 
 Goals met:
- Checks for whiteSpace, remove it, highlights cell light green, inserts Comment 'WhiteSpace Removed'
- Check for duplicate, highlights cell, inserts comment 'Duplicate Email'
- Check to see if comment exisits, and if so, concatenates new comment instead of overriding the old comment(s)
+ Checks sheet cells for whiteSpace, removes it from main sheet, highlights report sheet cell light green, inserts Comment 'WhiteSpace Removed' within report sheet cell
+ Check for duplicate emails, highlights main sheet and report sheet cells, inserts comment 'Duplicate Email' within report sheet cell, and sorts both main and report sheets by email
+ When inserting comments to cells, insertCommentToSheetCell function checks to see if comment exisits, and if so, concatenates new comment instead of overriding the old comment(s)
 
 
 Problem:
