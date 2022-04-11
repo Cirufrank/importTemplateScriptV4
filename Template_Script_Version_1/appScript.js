@@ -163,22 +163,25 @@ function checkForDuplicateEmails(sheetBinding, reportSheetBinding) {
 
       if (duplicates.indexOf(currentEmail) === -1 && currentEmail.length > 0) {
        if (emailColumnValues.filter(val => String(val) === currentEmail).length > 1) {
-       let reportSheetCell = getSheetCell(reportSheetBinding, row, emailColumnPosition);
+        let currentCell = getSheetCell(sheetBinding, row, emailColumnPosition);
+        let reportSheetCell = getSheetCell(reportSheetBinding, row, emailColumnPosition);
 
-       //Line below for testing
+        //Line below for testing
 
-       SpreadsheetApp.getUi().alert(`Duplicate found! ${currentEmail} ${reportSheetCell.getA1Notation()}`);
-       //testing line ends here
-       setSheetCellBackground(reportSheetCell, LIGHT_RED_HEX_CODE);
-       insertCommentToSheetCell(reportSheetCell, DUPLICATE_EMAIL_COMMENT);
+        SpreadsheetApp.getUi().alert(`Duplicate found! ${currentEmail} ${reportSheetCell.getA1Notation()}`);
+        //testing line ends here
+        setSheetCellBackground(reportSheetCell, LIGHT_RED_HEX_CODE);
+        setSheetCellBackground(currentCell, LIGHT_RED_HEX_CODE);
+        insertCommentToSheetCell(reportSheetCell, DUPLICATE_EMAIL_COMMENT);
 
-       duplicates.push(currentEmail);
+        duplicates.push(currentEmail);
+        }
       }
-     }
-    }
-  );
+      }
+    );
 
-  ss.sort(emailColumnPosition);
+  reportSheetBinding.sort(emailColumnPosition);
+  sheetBinding.sort(emailColumnPosition)
 }
 
 /*
