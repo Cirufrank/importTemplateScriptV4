@@ -2,9 +2,13 @@
 /*
 
 Goals met:
- Checks sheet cells for whiteSpace, removes it from main sheet, highlights report sheet cell light green, inserts Comment 'WhiteSpace Removed' within report sheet cell
- Check for duplicate emails, highlights main sheet and report sheet cells, inserts comment 'Duplicate Email' within report sheet cell, and sorts both main and report sheets by email
- When inserting comments to cells, insertCommentToSheetCell function checks to see if comment exisits, and if so, concatenates new comment instead of overriding the old comment(s)
+ Checks for whiteSpace, remove it, highlights cell light green, inserts Comment 'WhiteSpace Removed'
+ Check for duplicate, highlights cell, inserts comment 'Duplicate Email'
+ Check to see if comment exisits, and if so, concatenates new comment instead of overriding the old comment(s)
+ Check for missing first names, last names, or emails, highlights cells red on both report and main sheet, and    
+ insterts comment based on item (i.e. `Missing ${firstName/lastName/email`)
+ Does not highlight completely empty first name, last name, and email cells
+
 
 
 Problem:
@@ -51,6 +55,9 @@ const validateEmail = (email) => {
 const REPORT_SHEET_NAME = 'Report';
 const WHITE_SPACE_REMOVED_COMMENT = 'Whitespace Removed';
 const DUPLICATE_EMAIL_COMMENT = 'Duplicate email';
+const FIRST_NAME_MISSING_COMMENT = 'First name missing';
+const LAST_NAME_MISSING_COMMENT = 'Last name missing';
+const EMAIL_MISSING_COMMENT = 'Email missing';
 const LIGHT_GREEN_HEX_CODE = '#b6d7a8';
 const LIGHT_RED_HEX_CODE = '#f4cccc';
 let sheet = SpreadsheetApp.getActiveSheet();
@@ -184,6 +191,69 @@ function checkForDuplicateEmails(sheetBinding, reportSheetBinding) {
   sheetBinding.sort(emailColumnPosition)
 }
 
+function createArrayOfNamesAndEmail(firstNameRangeBinding, lastNameRangeBinding, emailColmnRangeBinding) {
+  let firstNameRangeValues = getValues(firstNameRangeBinding);
+  let lastNameRangeValues = getValues(lastNameRangeBinding);
+  let emailColumnRangeValues = getValues(emailColmnRangeBinding);
+  let firstNameLastNameEmailValueArrayBinding = [];
+  for (let i = 0; i < emailColumnRangeValues.length; i += 1) {
+  firstNameLastNameEmailValueArrayBinding.push([firstNameRangeValues[i], lastNameRangeValues[i], emailColumnRangeValues[i]]);
+  }
+
+   return firstNameLastNameEmailValueArrayBinding;
+}
+
+function checkForMissingNamesOrEmails(sheetBinding, reportSheetBinding) {
+  let firstNameRange = getColumnRange('First Name', sheet);
+  let firstNameRangePosition = firstNameRange.getColumn();
+  let lastNameRange = getColumnRange('Last Name', sheet);
+  let lastNameRangePosition = lastNameRange.getColumn();
+  let emailColumnRange = getColumnRange('Email', sheet);
+  let emailColumnPosition = emailColumnRange.getColumn();
+  let firstNameLastNameEmailValueArray = createArrayOfNamesAndEmail(firstNameRange, lastNameRange, emailColumnRange);
+
+  for (let i = 0; i < firstNameLastNameEmailValueArray.length; i +=1) {
+
+    let row = i + 2;
+    let firstName = String(firstNameLastNameEmailValueArray[i][0]);
+    let firstNameCurrentCell = getSheetCell(sheetBinding, row, firstNameRangePosition);
+    let reportSheetCurrentFNCell = getSheetCell(reportSheetBinding, row, firstNameRangePosition);
+    let lastName = String(firstNameLastNameEmailValueArray[i][1]);
+    let lastNameCurrentCell = getSheetCell(sheetBinding, row, lastNameRangePosition);
+    let reportSheetLNCurrentCell = getSheetCell(reportSheetBinding, row, lastNameRangePosition);
+    let email = String(firstNameLastNameEmailValueArray[i][2]);
+    let emailCurrentCell = getSheetCell(sheetBinding, row, emailColumnPosition);
+    let reportSheetEmailCurrentCell = getSheetCell(reportSheetBinding, row, emailColumnPosition);
+
+    if (firstName.length !== 0 || lastName.length !== 0 || email.length !== 0) {
+      firstNameLastNameEmailValueArray[i].forEach((val, index) => {
+        let currentCellValue = String(val);
+        if (currentCellValue === "") {
+          switch(index) {
+            case 0: 
+              setSheetCellBackground(reportSheetCurrentFNCell, LIGHT_RED_HEX_CODE);
+              setSheetCellBackground(firstNameCurrentCell, LIGHT_RED_HEX_CODE);
+              insertCommentToSheetCell(reportSheetCurrentFNCell, FIRST_NAME_MISSING_COMMENT);
+              break;
+            case 1:
+              setSheetCellBackground(reportSheetLNCurrentCell, LIGHT_RED_HEX_CODE);
+              setSheetCellBackground(lastNameCurrentCell, LIGHT_RED_HEX_CODE);
+              insertCommentToSheetCell(reportSheetLNCurrentCell, LAST_NAME_MISSING_COMMENT);
+              break;
+            case 2:
+              setSheetCellBackground(reportSheetEmailCurrentCell, LIGHT_RED_HEX_CODE);
+              setSheetCellBackground(emailCurrentCell, LIGHT_RED_HEX_CODE);
+              insertCommentToSheetCell(reportSheetEmailCurrentCell, EMAIL_MISSING_COMMENT);
+              break;
+          }
+        }
+      })
+    }
+  }
+
+  
+}
+
 /*
 
 https://developers.google.com/apps-script/reference/spreadsheet/conditional-format-rule-builder?hl=en
@@ -214,6 +284,7 @@ setFrozenRows(reportSheet, 1);
 
 removeWhiteSpaceFromCells(sheet, values, reportSheet);
 checkForDuplicateEmails(sheet, reportSheet);
+checkForMissingNamesOrEmails(sheet, reportSheet);
 
 
 }
