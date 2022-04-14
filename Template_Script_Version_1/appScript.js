@@ -8,6 +8,14 @@ Goals met:
  Check for missing first names, last names, or emails, highlights cells red on both report and main sheet, and    
  insterts comment based on item (i.e. `Missing ${firstName/lastName/email`)
  Does not highlight completely empty first name, last name, and email cells
+ Automatically formats "User Date Added" and "Birthday(YYYY-MM-DD)" columns to yyyy-mm-dd format, inserts comment on report sheet with green background lettings users know that this was done
+ Converts states that are fully written out, to their two letting codes, highlights cells on reports sheet, and insterts a comment on report sheet letting users know this was done
+
+
+ Things to be aware of:
+  Relies on a first name, last name, and email column being present to function correctly
+  Needs each column header to be perfect
+  The trim whitespace function is relied on heavily by other functions
 
 
 
@@ -58,8 +66,70 @@ const DUPLICATE_EMAIL_COMMENT = 'Duplicate email';
 const FIRST_NAME_MISSING_COMMENT = 'First name missing';
 const LAST_NAME_MISSING_COMMENT = 'Last name missing';
 const EMAIL_MISSING_COMMENT = 'Email missing';
+const DATE_FORMATTED_YYYY_MM_DD_COMMENT = 'Date formatted to YYYY-MM-DD';
+const STATE_TWO_LETTER_CODE_COMMENT = 'State converted to two letter code';
 const LIGHT_GREEN_HEX_CODE = '#b6d7a8';
 const LIGHT_RED_HEX_CODE = '#f4cccc';
+const US_STATE_TO_ABBREVIATION = {
+  "Alabama": "AL",
+  "Alaska": "AK",
+  "Arizona": "AZ",
+  "Arkansas": "AR",
+  "California": "CA",
+  "Colorado": "CO",
+  "Connecticut": "CT",
+  "Delaware": "DE",
+  "Florida": "FL",
+  "Georgia": "GA",
+  "Hawaii": "HI",
+  "Idaho": "ID",
+  "Illinois": "IL",
+  "Indiana": "IN",
+  "Iowa": "IA",
+  "Kansas": "KS",
+  "Kentucky": "KY",
+  "Louisiana": "LA",
+  "Maine": "ME",
+  "Maryland": "MD",
+  "Massachusetts": "MA",
+  "Michigan": "MI",
+  "Minnesota": "MN",
+  "Mississippi": "MS",
+  "Missouri": "MO",
+  "Montana": "MT",
+  "Nebraska": "NE",
+  "Nevada": "NV",
+  "New Hampshire": "NH",
+  "New Jersey": "NJ",
+  "New Mexico": "NM",
+  "New York": "NY",
+  "North Carolina": "NC",
+  "North Dakota": "ND",
+  "Ohio": "OH",
+  "Oklahoma": "OK",
+  "Oregon": "OR",
+  "Pennsylvania": "PA",
+  "Rhode Island": "RI",
+  "South Carolina": "SC",
+  "South Dakota": "SD",
+  "Tennessee": "TN",
+  "Texas": "TX",
+  "Utah": "UT",
+  "Vermont": "VT",
+  "Virginia": "VA",
+  "Washington": "WA",
+  "West Virginia": "WV",
+  "Wisconsin": "WI",
+  "Wyoming": "WY",
+  "District of Columbia": "DC",
+  "American Samoa": "AS",
+  "Guam": "GU",
+  "Northern Mariana Islands": "MP",
+  "Puerto Rico": "PR",
+  "United States Minor Outlying Islands": "UM",
+  "U.S. Virgin Islands": "VI",
+}
+const usFullStateNames = Object.keys(US_STATE_TO_ABBREVIATION);
 let sheet = SpreadsheetApp.getActiveSheet();
 let ss = SpreadsheetApp.getActiveSpreadsheet();
 let data = sheet.getDataRange();
@@ -254,6 +324,84 @@ function checkForMissingNamesOrEmails(sheetBinding, reportSheetBinding) {
   
 }
 
+function setColumnToYYYYMMDDFormat(columnRangeBinding) {
+columnRangeBinding.setNumberFormat('yyyy-mm-dd');
+}
+
+function formatUserDateAddedAndBirthdayColumns(sheetBinding, reportSheetBinding) {
+let row = 1;
+let birthdayColumn = getColumnRange('Birthday (YYYY-MM-DD)', sheetBinding);
+let userDateAddedColumn = getColumnRange('User Date Added', sheetBinding);
+
+if (birthdayColumn && userDateAddedColumn) {
+  let birthdayColumnPosition = birthdayColumn.getColumn();
+  let reportSheetBirthdayColumnHeaderCell = getSheetCell(reportSheetBinding, row, birthdayColumnPosition);
+  let userDateAddedColumnPosition = userDateAddedColumn.getColumn();
+  let reportSheetUserDateAddedColumnHeaderCell = getSheetCell(reportSheetBinding, row, userDateAddedColumnPosition);
+
+  setColumnToYYYYMMDDFormat(birthdayColumn);
+  setColumnToYYYYMMDDFormat(userDateAddedColumn);
+  setSheetCellBackground(reportSheetBirthdayColumnHeaderCell, LIGHT_GREEN_HEX_CODE);
+  insertCommentToSheetCell(reportSheetBirthdayColumnHeaderCell, DATE_FORMATTED_YYYY_MM_DD_COMMENT);
+  setSheetCellBackground(reportSheetUserDateAddedColumnHeaderCell, LIGHT_GREEN_HEX_CODE);
+  insertCommentToSheetCell(reportSheetUserDateAddedColumnHeaderCell, DATE_FORMATTED_YYYY_MM_DD_COMMENT);
+} else if (birthdayColumn) {
+  let birthdayColumnNumberFormat = birthdayColumn.getNumberFormat();
+  let birthdayColumnPosition = birthdayColumn.getColumn();
+  let reportSheetBirthdayColumnHeaderCell = getSheetCell(reportSheetBinding, row, birthdayColumnPosition);
+  setColumnToYYYYMMDDFormat(birthdayColumn);
+
+  setSheetCellBackground(reportSheetBirthdayColumnHeaderCell, LIGHT_GREEN_HEX_CODE);
+  insertCommentToSheetCell(reportSheetBirthdayColumnHeaderCell, DATE_FORMATTED_YYYY_MM_DD_COMMENT); 
+} else if (userDateAddedColumn) {
+  let userDateAddedColumnNumberFormat = userDateAddedColumn.getNumberFormat();
+  let userDateAddedColumnPosition = userDateAddedColumn.getColumn();
+  let reportSheetUserDateAddedColumnHeaderCell = getSheetCell(reportSheetBinding, row, userDateAddedColumnPosition);
+
+  setColumnToYYYYMMDDFormat(userDateAddedColumn);
+  setSheetCellBackground(reportSheetUserDateAddedColumnHeaderCell, LIGHT_GREEN_HEX_CODE);
+  insertCommentToSheetCell(reportSheetUserDateAddedColumnHeaderCell, DATE_FORMATTED_YYYY_MM_DD_COMMENT);
+}
+}
+
+function convertStatesToTwoLetterCode(sheetBinding, reportSheetBinding) {
+  let stateColumnRange = getColumnRange('State (Ex: NH)', sheetBinding);
+
+  if (stateColumnRange) {
+    let stateColumnRangeValues = getValues(stateColumnRange).map(val => {
+    let currentState = String(val);
+    if (currentState.length > 2) {
+      return (currentState[0].toUpperCase() + currentState.substr(1).toLowerCase());
+    } else {
+      return currentState;
+    }
+  });
+
+  // SpreadsheetApp.getUi().alert(`${stateColumnRangeValues}`); Testing
+
+    let stateColumnRangePosition = stateColumnRange.getColumn();
+    
+    stateColumnRangeValues.forEach((val, index) => {
+      let currentState = String(val);
+      // SpreadsheetApp.getUi().alert(`${currentState}`); Testing
+      // SpreadsheetApp.getUi().alert(`${currentState.length}`); Testing
+      let row = index + 2;
+      let currentCell = getSheetCell(sheetBinding, row, stateColumnRangePosition);
+      let currentReportCell = getSheetCell(reportSheetBinding, row, stateColumnRangePosition);
+      if (currentState.length > 2 && usFullStateNames.includes(currentState)) {
+        currentCell.setValue(US_STATE_TO_ABBREVIATION[currentState]);
+        setSheetCellBackground(currentReportCell, LIGHT_RED_HEX_CODE);
+        insertCommentToSheetCell(currentReportCell, STATE_TWO_LETTER_CODE_COMMENT);
+
+      }
+  });
+
+
+  }
+  
+
+}
+
 /*
 
 https://developers.google.com/apps-script/reference/spreadsheet/conditional-format-rule-builder?hl=en
@@ -285,6 +433,8 @@ setFrozenRows(reportSheet, 1);
 removeWhiteSpaceFromCells(sheet, values, reportSheet);
 checkForDuplicateEmails(sheet, reportSheet);
 checkForMissingNamesOrEmails(sheet, reportSheet);
+formatUserDateAddedAndBirthdayColumns(sheet, reportSheet);
+convertStatesToTwoLetterCode(sheet, reportSheet);
 
 
 }
