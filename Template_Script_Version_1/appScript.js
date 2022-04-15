@@ -10,12 +10,14 @@ Goals met:
  Does not highlight completely empty first name, last name, and email cells
  Automatically formats "User Date Added" and "Birthday(YYYY-MM-DD)" columns to yyyy-mm-dd format, inserts comment on report sheet with green background lettings users know that this was done
  Converts states that are fully written out, to their two letting codes, highlights cells on reports sheet, and insterts a comment on report sheet letting users know this was done
+ Formats all letters in a name to begin with a capital letter, removes extra hyphens, does not break on blank columns, after finished running highlights header cell of first and last names columns light green, then sets a comment lettings users know it was ran
 
 
  Things to be aware of:
   Relies on a first name, last name, and email column being present to function correctly
   Needs each column header to be perfect
   The trim whitespace function is relied on heavily by other functions
+  Leeps underscores in names and removed whitespace from hyphens
 
 
 
@@ -68,6 +70,8 @@ const LAST_NAME_MISSING_COMMENT = 'Last name missing';
 const EMAIL_MISSING_COMMENT = 'Email missing';
 const DATE_FORMATTED_YYYY_MM_DD_COMMENT = 'Date formatted to YYYY-MM-DD';
 const STATE_TWO_LETTER_CODE_COMMENT = 'State converted to two letter code';
+const CAPITALIZATION_FUNCTION_RAN_ON_FN_COMMENT = 'Capitalization function ran on first name column';
+const CAPITALIZATION_FUNCTION_RAN_ON_LN_COMMENT = 'Capitalization function ran on last name column';
 const LIGHT_GREEN_HEX_CODE = '#b6d7a8';
 const LIGHT_RED_HEX_CODE = '#f4cccc';
 const US_STATE_TO_ABBREVIATION = {
@@ -402,6 +406,50 @@ function convertStatesToTwoLetterCode(sheetBinding, reportSheetBinding) {
 
 }
 
+function capitalizeFirstLetterOfAName(name) {
+  return name.split(" ").filter(name => name.length > 0 && name).map(name => name.trim()[0].toUpperCase() + name.trim().substr(1).toLowerCase()).join(" ").split("-").map(name => name.trim()).filter(name => name !== "-" && name.length > 0).map(name => (name.split(" ").length > 1) ? name : name.trim()[0].toUpperCase() + name.trim().substr(1).toLowerCase()).join("-");
+}
+
+function capitalizeFirstLetterOfWords(sheetBinding, reportSheetBinding) {
+let firstNameRange = getColumnRange('First Name', sheetBinding);
+let firstNameColumnPosition = firstNameRange.getColumn();
+let lastNameRange = getColumnRange('Last Name', sheetBinding);
+let lastNameRangeColumnPosition = lastNameRange.getColumn();
+let firstNameRangeValues = getValues(firstNameRange);
+let lastNameRangeValues = getValues(lastNameRange);
+let reportSheetFirstNameHeaderCell = getSheetCell(reportSheetBinding, 1, firstNameColumnPosition);
+let reportSheetLastNameHeaderCell = getSheetCell(reportSheetBinding, 1, lastNameRangeColumnPosition);
+
+firstNameRangeValues.forEach((name, index) => {
+  let currentName = String(name);
+  if (currentName.length > 0) {
+    let row = index + 2;
+    let currentCell = getSheetCell(sheet, row, firstNameColumnPosition);
+    currentCell.setValue(capitalizeFirstLetterOfAName(currentName));
+    
+  }
+  
+});
+
+lastNameRangeValues.forEach((name, index) => {
+  let currentName = String(name);
+
+  if (currentName.length > 0) {
+    let row = index + 2;
+    let currentCell = getSheetCell(sheet, row, lastNameRangeColumnPosition);
+    currentCell.setValue(capitalizeFirstLetterOfAName(currentName));
+    
+  }
+  
+});
+
+setSheetCellBackground(reportSheetFirstNameHeaderCell, LIGHT_GREEN_HEX_CODE);
+insertCommentToSheetCell(reportSheetFirstNameHeaderCell, CAPITALIZATION_FUNCTION_RAN_ON_FN_COMMENT);
+setSheetCellBackground(reportSheetLastNameHeaderCell, LIGHT_GREEN_HEX_CODE);
+insertCommentToSheetCell(reportSheetLastNameHeaderCell, CAPITALIZATION_FUNCTION_RAN_ON_LN_COMMENT);
+
+} 
+
 /*
 
 https://developers.google.com/apps-script/reference/spreadsheet/conditional-format-rule-builder?hl=en
@@ -435,9 +483,11 @@ checkForDuplicateEmails(sheet, reportSheet);
 checkForMissingNamesOrEmails(sheet, reportSheet);
 formatUserDateAddedAndBirthdayColumns(sheet, reportSheet);
 convertStatesToTwoLetterCode(sheet, reportSheet);
+capitalizeFirstLetterOfWords(sheet, reportSheet);
 
 
 }
+
 
   
 // Creates "User Template Check" navigation button within Spreadsheet UI
