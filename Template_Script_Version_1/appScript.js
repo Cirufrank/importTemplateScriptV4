@@ -10,14 +10,22 @@ Goals met:
  Does not highlight completely empty first name, last name, and email cells
  Automatically formats "User Date Added" and "Birthday(YYYY-MM-DD)" columns to yyyy-mm-dd format, inserts comment on report sheet with green background lettings users know that this was done
  Converts states that are fully written out, to their two letting codes, highlights cells on reports sheet, and insterts a comment on report sheet letting users know this was done
- Formats all letters in a name to begin with a capital letter, removes extra hyphens, does not break on blank columns, after finished running highlights header cell of first and last names columns light green, then sets a comment lettings users know it was ran
+ Performs email validation, highlights main sheet and report sheet cells red, and insets a comment to reprot sheet cell saying "invalid email"
+ Performs postal code validation, highlights main sheet and report sheet cells red, and insets a comment to reprot sheet cell saying "invalid postal code"
+
+ ToDos: 
+ 
+ Make an ending report that shows all functions that were ran
+ Create documentation of script
+ Validate phone numbers
+
 
 
  Things to be aware of:
   Relies on a first name, last name, and email column being present to function correctly
   Needs each column header to be perfect
   The trim whitespace function is relied on heavily by other functions
-  Leeps underscores in names and removed whitespace from hyphens
+  Assumes that there is a zip, phone, and mobile column
 
 
 
@@ -72,6 +80,9 @@ const DATE_FORMATTED_YYYY_MM_DD_COMMENT = 'Date formatted to YYYY-MM-DD';
 const STATE_TWO_LETTER_CODE_COMMENT = 'State converted to two letter code';
 const CAPITALIZATION_FUNCTION_RAN_ON_FN_COMMENT = 'Capitalization function ran on first name column';
 const CAPITALIZATION_FUNCTION_RAN_ON_LN_COMMENT = 'Capitalization function ran on last name column';
+const INVALID_EMAIL_COMMENT = 'Invalid email format';
+const INVALID_POSTAL_CODE_COMMENT = 'Invalid postal code';
+const INVALID_PHONE_NUMBER_COMMENT = 'Invalid phone number';
 const LIGHT_GREEN_HEX_CODE = '#b6d7a8';
 const LIGHT_RED_HEX_CODE = '#f4cccc';
 const US_STATE_TO_ABBREVIATION = {
@@ -249,7 +260,7 @@ function checkForDuplicateEmails(sheetBinding, reportSheetBinding) {
 
         //Line below for testing
 
-        SpreadsheetApp.getUi().alert(`Duplicate found! ${currentEmail} ${reportSheetCell.getA1Notation()}`);
+        // SpreadsheetApp.getUi().alert(`Duplicate found! ${currentEmail} ${reportSheetCell.getA1Notation()}`);
         //testing line ends here
         setSheetCellBackground(reportSheetCell, LIGHT_RED_HEX_CODE);
         setSheetCellBackground(currentCell, LIGHT_RED_HEX_CODE);
@@ -450,6 +461,126 @@ insertCommentToSheetCell(reportSheetLastNameHeaderCell, CAPITALIZATION_FUNCTION_
 
 } 
 
+const validateEmail = (email) => {
+return String(email)
+  .toLowerCase()
+  .match(
+    /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+  );
+};
+
+const validatePhoneNumbers = (number) => {
+return String(number)
+  .toLowerCase()
+  .match(
+/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im
+  );
+};
+
+const validatePostalCode = (postalCode) => {
+return /(^\d{5}$)|(^\d{5}-\d{4}$)/.test(postalCode);
+}
+// Consider this match: /^w+([.-]?w+)*@w+([.-]?w+)*(.w{2,3})+$/;
+
+function checkForInvalidEmails(sheetBinding, reportSheetBinding) {
+  let emailColumnRange = getColumnRange('Email', sheetBinding);
+  let emailColumnValues = getValues(emailColumnRange);
+  let emailColumnPosition = emailColumnRange.getColumn();
+
+  emailColumnValues.forEach((email, index) => {
+    let currentEmail = String(email);
+    let row = index + 2;
+
+      if (currentEmail !== "" && !validateEmail(currentEmail)) {
+        let currentCell = getSheetCell(sheetBinding, row, emailColumnPosition);
+        let reportSheetCell = getSheetCell(reportSheetBinding, row, emailColumnPosition);
+
+        //Line below for testing
+
+        // SpreadsheetApp.getUi().alert(`Invalid Email! ${currentEmail} ${reportSheetCell.getA1Notation()}`);
+        //testing line ends here
+        setSheetCellBackground(reportSheetCell, LIGHT_RED_HEX_CODE);
+        setSheetCellBackground(currentCell, LIGHT_RED_HEX_CODE);
+        insertCommentToSheetCell(reportSheetCell, INVALID_EMAIL_COMMENT);
+        }
+      }
+    );
+}
+
+function checkForInvalidNumbers(sheetBinding, reportSheetBinding) {
+  let homePhoneNumberRange = getColumnRange('Phone', sheetBinding);
+  let homePhoneNumberRangeValues = getValues(homePhoneNumberRange);
+  let homePhoneNumberRangePosition = homePhoneNumberRange.getColumn();
+  let cellPhoneNumberRange = getColumnRange('Mobile', sheetBinding);
+  let cellPhoneNumberRangeValues = getValues(cellPhoneNumberRange);
+  let cellPhoneNumberRangePosition = cellPhoneNumberRange.getColumn();
+
+  homePhoneNumberRangeValues.forEach((number, index) => {
+
+    let currentNumber= String(number);
+    let row = index + 2;
+
+      if (currentNumber !== "" && !validatePhoneNumbers(currentNumber)) {
+        let currentCell = getSheetCell(sheetBinding, row, homePhoneNumberRangePosition);
+        let reportSheetCell = getSheetCell(reportSheetBinding, row, homePhoneNumberRangePosition);
+
+        //Line below for testing
+
+        // SpreadsheetApp.getUi().alert(`Invalid Email! ${currentEmail} ${reportSheetCell.getA1Notation()}`);
+        //testing line ends here
+        setSheetCellBackground(reportSheetCell, LIGHT_RED_HEX_CODE);
+        setSheetCellBackground(currentCell, LIGHT_RED_HEX_CODE);
+        insertCommentToSheetCell(reportSheetCell, INVALID_PHONE_NUMBER_COMMENT);
+        }
+      }
+    );
+
+    cellPhoneNumberRangeValues.forEach((number, index) => {
+
+    let currentNumber= String(number);
+    let row = index + 2;
+
+      if (currentNumber !== "" && !validatePhoneNumbers(currentNumber)) {
+        let currentCell = getSheetCell(sheetBinding, row, cellPhoneNumberRangePosition);
+        let reportSheetCell = getSheetCell(reportSheetBinding, row, cellPhoneNumberRangePosition);
+
+        //Line below for testing
+
+        // SpreadsheetApp.getUi().alert(`Invalid Email! ${currentEmail} ${reportSheetCell.getA1Notation()}`);
+        //testing line ends here
+        setSheetCellBackground(reportSheetCell, LIGHT_RED_HEX_CODE);
+        setSheetCellBackground(currentCell, LIGHT_RED_HEX_CODE);
+        insertCommentToSheetCell(reportSheetCell, INVALID_PHONE_NUMBER_COMMENT);
+        }
+      }
+    );
+}
+
+function checkForInvalidPostalCodes(sheetBinding, reportSheetBinding) {
+  let postalCodeColumnRange = getColumnRange('Zip', sheetBinding);
+  let postalCodeColumnRangeValues = getValues(postalCodeColumnRange);
+  let postalCodeColumnRangePosition = postalCodeColumnRange.getColumn();
+
+  postalCodeColumnRangeValues.forEach((code, index) => {
+    let currentCode = String(code);
+    let row = index + 2;
+
+      if (currentCode !== "" && !validatePostalCode(currentCode)) {
+        let currentCell = getSheetCell(sheetBinding, row, postalCodeColumnRangePosition);
+        let reportSheetCell = getSheetCell(reportSheetBinding, row, postalCodeColumnRangePosition);
+
+        //Line below for testing
+
+        // SpreadsheetApp.getUi().alert(`Invalid Email! ${currentEmail} ${reportSheetCell.getA1Notation()}`);
+        //testing line ends here
+        setSheetCellBackground(reportSheetCell, LIGHT_RED_HEX_CODE);
+        setSheetCellBackground(currentCell, LIGHT_RED_HEX_CODE);
+        insertCommentToSheetCell(reportSheetCell, INVALID_POSTAL_CODE_COMMENT);
+        }
+      }
+    );
+}
+
 /*
 
 https://developers.google.com/apps-script/reference/spreadsheet/conditional-format-rule-builder?hl=en
@@ -483,7 +614,10 @@ checkForDuplicateEmails(sheet, reportSheet);
 checkForMissingNamesOrEmails(sheet, reportSheet);
 formatUserDateAddedAndBirthdayColumns(sheet, reportSheet);
 convertStatesToTwoLetterCode(sheet, reportSheet);
-capitalizeFirstLetterOfWords(sheet, reportSheet);
+// capitalizeFirstLetterOfWords(sheet, reportSheet);
+checkForInvalidEmails(sheet, reportSheet);
+checkForInvalidPostalCodes(sheet, reportSheet);
+checkForInvalidNumbers(sheet, reportSheet);
 
 
 }
