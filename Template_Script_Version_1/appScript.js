@@ -12,12 +12,16 @@ Goals met:
  Converts states that are fully written out, to their two letting codes, highlights cells on reports sheet, and insterts a comment on report sheet letting users know this was done
  Performs email validation, highlights main sheet and report sheet cells red, and insets a comment to reprot sheet cell saying "invalid email"
  Performs postal code validation, highlights main sheet and report sheet cells red, and insets a comment to reprot sheet cell saying "invalid postal code"
+ Performs both home and mobile phone number validation
+ Sets the last header cell of the report sheet to "REPORT SUMMARY" and provides a comment of all check that were ran
+ Handles exceptions
+
 
  ToDos: 
  
- Make an ending report that shows all functions that were ran
  Create documentation of script
- Validate phone numbers
+ Add date served formatting, email check and validation, and hours check for individual hours template
+ Publish the script privately for use by those frome the galaxydigital.com domain
 
 
 
@@ -149,8 +153,9 @@ let sheet = SpreadsheetApp.getActiveSheet();
 let ss = SpreadsheetApp.getActiveSpreadsheet();
 let data = sheet.getDataRange();
 let values = data.getValues();
-let columnHeaders = values[0];
+let columnHeaders = values[0].map(header => header.trim());
 //Consider values[0].map(header => (header[0] + header.substr(1)).trim()) to help avoid errors here
+let reportSummaryComment = '';
 
 function getSheet(sheetName) {
   return ss.getSheetByName(sheetName);
@@ -212,33 +217,34 @@ function getValues(range) {
 }
 
 function removeWhiteSpaceFromCells(mainSheetBinding, valuesToCheck, reportSheetBinding) {
-  let rowCount = valuesToCheck.length;
-  let columnCount = valuesToCheck[0].length;
-  let searchRange = (1, 1, rowCount, columnCount);
+let rowCount = valuesToCheck.length;
+let columnCount = valuesToCheck[0].length;
+let searchRange = (1, 1, rowCount, columnCount);
 
-  let cellsTrimmed = [];
+let cellsTrimmed = [];
 
-    for (let row = 1; row < rowCount; row += 1) {
-    for (let column = 0; column < columnCount; column += 1) {
-      let currentVal = valuesToCheck[row][column];
-      let firstChar = currentVal.toString()[0];
-      let lastChar = currentVal[currentVal.toString().length - 1];
-      let currentCell = getSheetCell(mainSheetBinding, row + 1, column + 1);
-      let reportSheetCell = getSheetCell(reportSheetBinding, row + 1, column + 1);
+  for (let row = 1; row < rowCount; row += 1) {
+  for (let column = 0; column < columnCount; column += 1) {
+    let currentVal = valuesToCheck[row][column];
+    let firstChar = currentVal.toString()[0];
+    let lastChar = currentVal[currentVal.toString().length - 1];
+    let currentCell = getSheetCell(mainSheetBinding, row + 1, column + 1);
+    let reportSheetCell = getSheetCell(reportSheetBinding, row + 1, column + 1);
 
-      if (firstChar === " " || lastChar === " ") {
-      currentCell.setValue(`${currentVal.trim()}`);
-      setSheetCellBackground(reportSheetCell, LIGHT_GREEN_HEX_CODE);
-      insertCommentToSheetCell(reportSheetCell, WHITE_SPACE_REMOVED_COMMENT);
+    if (firstChar === " " || lastChar === " ") {
+    currentCell.setValue(`${currentVal.trim()}`);
+    setSheetCellBackground(reportSheetCell, LIGHT_GREEN_HEX_CODE);
+    insertCommentToSheetCell(reportSheetCell, WHITE_SPACE_REMOVED_COMMENT);
 
-      //Remove later or check row and column information to be in A1 Notations
+    //Remove later or check row and column information to be in A1 Notations
 
-      cellsTrimmed.push(`Value: ${currentVal} Row: ${currentCell.getRow()} Column: ${currentCell.getColumn()}`);
-      }
+    cellsTrimmed.push(`Value: ${currentVal} Row: ${currentCell.getRow()} Column: ${currentCell.getColumn()}`);
     }
   }
-  //Remove later or use for logging events
-  console.log(cellsTrimmed);
+}
+//Remove later or use for logging events
+// console.log(cellsTrimmed);
+reportSummaryComment += "Success: removed white space from cells";
 }
 
 
@@ -273,7 +279,9 @@ function checkForDuplicateEmails(sheetBinding, reportSheetBinding) {
     );
 
   reportSheetBinding.sort(emailColumnPosition);
-  sheetBinding.sort(emailColumnPosition)
+  sheetBinding.sort(emailColumnPosition);
+  reportSummaryComment += ", Success: checked emails column for duplicates";
+
 }
 
 function createArrayOfNamesAndEmail(firstNameRangeBinding, lastNameRangeBinding, emailColmnRangeBinding) {
@@ -287,6 +295,7 @@ function createArrayOfNamesAndEmail(firstNameRangeBinding, lastNameRangeBinding,
 
    return firstNameLastNameEmailValueArrayBinding;
 }
+
 
 function checkForMissingNamesOrEmails(sheetBinding, reportSheetBinding) {
   let firstNameRange = getColumnRange('First Name', sheet);
@@ -312,35 +321,34 @@ function checkForMissingNamesOrEmails(sheetBinding, reportSheetBinding) {
 
     if (firstName.length !== 0 || lastName.length !== 0 || email.length !== 0) {
       firstNameLastNameEmailValueArray[i].forEach((val, index) => {
-        let currentCellValue = String(val);
-        if (currentCellValue === "") {
-          switch(index) {
-            case 0: 
-              setSheetCellBackground(reportSheetCurrentFNCell, LIGHT_RED_HEX_CODE);
-              setSheetCellBackground(firstNameCurrentCell, LIGHT_RED_HEX_CODE);
-              insertCommentToSheetCell(reportSheetCurrentFNCell, FIRST_NAME_MISSING_COMMENT);
-              break;
-            case 1:
-              setSheetCellBackground(reportSheetLNCurrentCell, LIGHT_RED_HEX_CODE);
-              setSheetCellBackground(lastNameCurrentCell, LIGHT_RED_HEX_CODE);
-              insertCommentToSheetCell(reportSheetLNCurrentCell, LAST_NAME_MISSING_COMMENT);
-              break;
-            case 2:
-              setSheetCellBackground(reportSheetEmailCurrentCell, LIGHT_RED_HEX_CODE);
-              setSheetCellBackground(emailCurrentCell, LIGHT_RED_HEX_CODE);
-              insertCommentToSheetCell(reportSheetEmailCurrentCell, EMAIL_MISSING_COMMENT);
-              break;
-          }
+      let currentCellValue = String(val);
+      if (currentCellValue === "") {
+        switch(index) {
+          case 0: 
+            setSheetCellBackground(reportSheetCurrentFNCell, LIGHT_RED_HEX_CODE);
+            setSheetCellBackground(firstNameCurrentCell, LIGHT_RED_HEX_CODE);
+            insertCommentToSheetCell(reportSheetCurrentFNCell, FIRST_NAME_MISSING_COMMENT);
+            break;
+          case 1:
+            setSheetCellBackground(reportSheetLNCurrentCell, LIGHT_RED_HEX_CODE);
+            setSheetCellBackground(lastNameCurrentCell, LIGHT_RED_HEX_CODE);
+            insertCommentToSheetCell(reportSheetLNCurrentCell, LAST_NAME_MISSING_COMMENT);
+            break;
+          case 2:
+            setSheetCellBackground(reportSheetEmailCurrentCell, LIGHT_RED_HEX_CODE);
+            setSheetCellBackground(emailCurrentCell, LIGHT_RED_HEX_CODE);
+            insertCommentToSheetCell(reportSheetEmailCurrentCell, EMAIL_MISSING_COMMENT);
+            break;
         }
-      })
-    }
+      }
+    })
   }
-
-  
+}
+reportSummaryComment += ", Success: checked for missing names and emails";
 }
 
 function setColumnToYYYYMMDDFormat(columnRangeBinding) {
-columnRangeBinding.setNumberFormat('yyyy-mm-dd');
+  columnRangeBinding.setNumberFormat('yyyy-mm-dd');
 }
 
 function formatUserDateAddedAndBirthdayColumns(sheetBinding, reportSheetBinding) {
@@ -360,6 +368,7 @@ if (birthdayColumn && userDateAddedColumn) {
   insertCommentToSheetCell(reportSheetBirthdayColumnHeaderCell, DATE_FORMATTED_YYYY_MM_DD_COMMENT);
   setSheetCellBackground(reportSheetUserDateAddedColumnHeaderCell, LIGHT_GREEN_HEX_CODE);
   insertCommentToSheetCell(reportSheetUserDateAddedColumnHeaderCell, DATE_FORMATTED_YYYY_MM_DD_COMMENT);
+  reportSummaryComment += ", Success: formatted birthday column and user date added column";
 } else if (birthdayColumn) {
   let birthdayColumnNumberFormat = birthdayColumn.getNumberFormat();
   let birthdayColumnPosition = birthdayColumn.getColumn();
@@ -368,6 +377,7 @@ if (birthdayColumn && userDateAddedColumn) {
 
   setSheetCellBackground(reportSheetBirthdayColumnHeaderCell, LIGHT_GREEN_HEX_CODE);
   insertCommentToSheetCell(reportSheetBirthdayColumnHeaderCell, DATE_FORMATTED_YYYY_MM_DD_COMMENT); 
+  reportSummaryComment += ", Success: formatted birthday column and did not find user date added column"
 } else if (userDateAddedColumn) {
   let userDateAddedColumnNumberFormat = userDateAddedColumn.getNumberFormat();
   let userDateAddedColumnPosition = userDateAddedColumn.getColumn();
@@ -376,7 +386,9 @@ if (birthdayColumn && userDateAddedColumn) {
   setColumnToYYYYMMDDFormat(userDateAddedColumn);
   setSheetCellBackground(reportSheetUserDateAddedColumnHeaderCell, LIGHT_GREEN_HEX_CODE);
   insertCommentToSheetCell(reportSheetUserDateAddedColumnHeaderCell, DATE_FORMATTED_YYYY_MM_DD_COMMENT);
+  reportSummaryComment += ", Success: formatted user date added column and did not find birthday column"
 }
+
 }
 
 function convertStatesToTwoLetterCode(sheetBinding, reportSheetBinding) {
@@ -411,55 +423,63 @@ function convertStatesToTwoLetterCode(sheetBinding, reportSheetBinding) {
       }
   });
 
+  reportSummaryComment += ", Success: ran check to convert states to two-digit format";
+
+
+  } else {
+    reportSummaryComment += ", Success: ran check to convert states to two-digit format but did not find column"
 
   }
   
 
 }
+
+
 
 function capitalizeFirstLetterOfAName(name) {
   return name.split(" ").filter(name => name.length > 0 && name).map(name => name.trim()[0].toUpperCase() + name.trim().substr(1).toLowerCase()).join(" ").split("-").map(name => name.trim()).filter(name => name !== "-" && name.length > 0).map(name => (name.split(" ").length > 1) ? name : name.trim()[0].toUpperCase() + name.trim().substr(1).toLowerCase()).join("-");
 }
 
-function capitalizeFirstLetterOfWords(sheetBinding, reportSheetBinding) {
-let firstNameRange = getColumnRange('First Name', sheetBinding);
-let firstNameColumnPosition = firstNameRange.getColumn();
-let lastNameRange = getColumnRange('Last Name', sheetBinding);
-let lastNameRangeColumnPosition = lastNameRange.getColumn();
-let firstNameRangeValues = getValues(firstNameRange);
-let lastNameRangeValues = getValues(lastNameRange);
-let reportSheetFirstNameHeaderCell = getSheetCell(reportSheetBinding, 1, firstNameColumnPosition);
-let reportSheetLastNameHeaderCell = getSheetCell(reportSheetBinding, 1, lastNameRangeColumnPosition);
+//Not using this function for now, but saving for later or personal use
+// function capitalizeFirstLetterOfWords(sheetBinding, reportSheetBinding) {
+//   let firstNameRange = getColumnRange('First Name', sheetBinding);
+//   let firstNameColumnPosition = firstNameRange.getColumn();
+//   let lastNameRange = getColumnRange('Last Name', sheetBinding);
+//   let lastNameRangeColumnPosition = lastNameRange.getColumn();
+//   let firstNameRangeValues = getValues(firstNameRange);
+//   let lastNameRangeValues = getValues(lastNameRange);
+//   let reportSheetFirstNameHeaderCell = getSheetCell(reportSheetBinding, 1, firstNameColumnPosition);
+//   let reportSheetLastNameHeaderCell = getSheetCell(reportSheetBinding, 1, lastNameRangeColumnPosition);
 
-firstNameRangeValues.forEach((name, index) => {
-  let currentName = String(name);
-  if (currentName.length > 0) {
-    let row = index + 2;
-    let currentCell = getSheetCell(sheet, row, firstNameColumnPosition);
-    currentCell.setValue(capitalizeFirstLetterOfAName(currentName));
+//   firstNameRangeValues.forEach((name, index) => {
+//     let currentName = String(name);
+//     if (currentName.length > 0) {
+//       let row = index + 2;
+//       let currentCell = getSheetCell(sheet, row, firstNameColumnPosition);
+//       currentCell.setValue(capitalizeFirstLetterOfAName(currentName));
     
-  }
+//     }
   
-});
+//   });
 
-lastNameRangeValues.forEach((name, index) => {
-  let currentName = String(name);
+//   lastNameRangeValues.forEach((name, index) => {
+//     let currentName = String(name);
 
-  if (currentName.length > 0) {
-    let row = index + 2;
-    let currentCell = getSheetCell(sheet, row, lastNameRangeColumnPosition);
-    currentCell.setValue(capitalizeFirstLetterOfAName(currentName));
+//     if (currentName.length > 0) {
+//       let row = index + 2;
+//       let currentCell = getSheetCell(sheet, row, lastNameRangeColumnPosition);
+//       currentCell.setValue(capitalizeFirstLetterOfAName(currentName));
     
-  }
+//     }
   
-});
+//   });
 
-setSheetCellBackground(reportSheetFirstNameHeaderCell, LIGHT_GREEN_HEX_CODE);
-insertCommentToSheetCell(reportSheetFirstNameHeaderCell, CAPITALIZATION_FUNCTION_RAN_ON_FN_COMMENT);
-setSheetCellBackground(reportSheetLastNameHeaderCell, LIGHT_GREEN_HEX_CODE);
-insertCommentToSheetCell(reportSheetLastNameHeaderCell, CAPITALIZATION_FUNCTION_RAN_ON_LN_COMMENT);
+//   setSheetCellBackground(reportSheetFirstNameHeaderCell, LIGHT_GREEN_HEX_CODE);
+//   insertCommentToSheetCell(reportSheetFirstNameHeaderCell, CAPITALIZATION_FUNCTION_RAN_ON_FN_COMMENT);
+//   setSheetCellBackground(reportSheetLastNameHeaderCell, LIGHT_GREEN_HEX_CODE);
+//   insertCommentToSheetCell(reportSheetLastNameHeaderCell, CAPITALIZATION_FUNCTION_RAN_ON_LN_COMMENT);
 
-} 
+// } 
 
 const validateEmail = (email) => {
 return String(email)
@@ -505,20 +525,22 @@ function checkForInvalidEmails(sheetBinding, reportSheetBinding) {
         }
       }
     );
+
+    reportSummaryComment += ", Success: ran check for invalid emails";
 }
 
 function checkForInvalidNumbers(sheetBinding, reportSheetBinding) {
   let homePhoneNumberRange = getColumnRange('Phone', sheetBinding);
-  let homePhoneNumberRangeValues = getValues(homePhoneNumberRange);
-  let homePhoneNumberRangePosition = homePhoneNumberRange.getColumn();
   let cellPhoneNumberRange = getColumnRange('Mobile', sheetBinding);
-  let cellPhoneNumberRangeValues = getValues(cellPhoneNumberRange);
-  let cellPhoneNumberRangePosition = cellPhoneNumberRange.getColumn();
 
-  homePhoneNumberRangeValues.forEach((number, index) => {
+  if (homePhoneNumberRange) {
+    let homePhoneNumberRangeValues = getValues(homePhoneNumberRange);
+    let homePhoneNumberRangePosition = homePhoneNumberRange.getColumn();
 
-    let currentNumber= String(number);
-    let row = index + 2;
+    homePhoneNumberRangeValues.forEach((number, index) => {
+
+      let currentNumber= String(number);
+      let row = index + 2;
 
       if (currentNumber !== "" && !validatePhoneNumbers(currentNumber)) {
         let currentCell = getSheetCell(sheetBinding, row, homePhoneNumberRangePosition);
@@ -533,7 +555,18 @@ function checkForInvalidNumbers(sheetBinding, reportSheetBinding) {
         insertCommentToSheetCell(reportSheetCell, INVALID_PHONE_NUMBER_COMMENT);
         }
       }
+      
     );
+
+    reportSummaryComment += ", Success: ran check for invalid home phone numbers";
+
+  } else {
+    reportSummaryComment += ", Success: ran check for invalid home phone numbers, but did not find column";
+  }
+
+  if (cellPhoneNumberRange) {
+    let cellPhoneNumberRangeValues = getValues(cellPhoneNumberRange);
+    let cellPhoneNumberRangePosition = cellPhoneNumberRange.getColumn();
 
     cellPhoneNumberRangeValues.forEach((number, index) => {
 
@@ -554,16 +587,25 @@ function checkForInvalidNumbers(sheetBinding, reportSheetBinding) {
         }
       }
     );
+
+    reportSummaryComment += ", Success: ran check for invalid mobile phone numbers";
+
+  } else {
+    reportSummaryComment += ", Success: ran check for invalid mobile phone numbers, but did not find column";
+  }
+
 }
 
 function checkForInvalidPostalCodes(sheetBinding, reportSheetBinding) {
   let postalCodeColumnRange = getColumnRange('Zip', sheetBinding);
-  let postalCodeColumnRangeValues = getValues(postalCodeColumnRange);
-  let postalCodeColumnRangePosition = postalCodeColumnRange.getColumn();
 
-  postalCodeColumnRangeValues.forEach((code, index) => {
-    let currentCode = String(code);
-    let row = index + 2;
+  if (postalCodeColumnRange) {
+    let postalCodeColumnRangeValues = getValues(postalCodeColumnRange);
+    let postalCodeColumnRangePosition = postalCodeColumnRange.getColumn();
+
+    postalCodeColumnRangeValues.forEach((code, index) => {
+      let currentCode = String(code);
+      let row = index + 2;
 
       if (currentCode !== "" && !validatePostalCode(currentCode)) {
         let currentCell = getSheetCell(sheetBinding, row, postalCodeColumnRangePosition);
@@ -579,7 +621,28 @@ function checkForInvalidPostalCodes(sheetBinding, reportSheetBinding) {
         }
       }
     );
+
+    reportSummaryComment += ", Success: ran check for invalid postal codes";
+  } else {
+    reportSummaryComment += ", Success: ran check for invalid postal codes, but did not find column";
+  }
+  
 }
+
+function setCommentsOnReportCell(reportSheetBinding) {
+ let reportSheetCellPosition = columnHeaders.length + 1;
+ let row = 1;
+ const clearRange = () => {reportSheetBinding.getRange(1,reportSheetCellPosition, reportSheetBinding.getMaxRows()).clear();
+ }
+
+ clearRange();
+ let reportCell = getSheetCell(reportSheetBinding, row, reportSheetCellPosition);
+
+ reportCell.setValue(`REPORT OVERVIEW`);
+ insertCommentToSheetCell(reportCell, reportSummaryComment);
+}
+
+
 
 /*
 
@@ -598,35 +661,110 @@ sheet.setConditionalFormatRules(rules);
 
 // Function that executes when user clicks "User Template Check" Button
 
-function checkUserImportTemplate() {
-let reportSheet = getSheet(REPORT_SHEET_NAME);
+try {
+  function checkUserImportTemplate() {
+  let reportSheet = getSheet(REPORT_SHEET_NAME);
+  
+  deleteSheetIfExists(reportSheet);
+  
 
-deleteSheetIfExists(reportSheet);
+  reportSheet = createSheetCopy(ss, REPORT_SHEET_NAME, values);
 
+  setFrozenRows(sheet, 1);
+  setFrozenRows(reportSheet, 1);
 
-reportSheet = createSheetCopy(ss, REPORT_SHEET_NAME, values);
+  
+  try {
+    removeWhiteSpaceFromCells(sheet, values, reportSheet);
+  } catch (err) {
+    Logger.log(err);
+    reportSummaryComment += "Failed: remove white space from cells";
+    throw new Error(`White space not removed from cells. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
+  
+  try {
+    checkForDuplicateEmails(sheet, reportSheet);
+  } catch(err) {
+    Logger.log(err);
+    reportSummaryComment += ", Failed: check emails column for duplicates";
+    throw new Error(`Emails not checked for duplicates. Reason: ${err.name}: ${err.message}. Please revert sheet to previous version, ensure the email column is titled "Email" within its header column, and try again. If this test does not work, record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
 
-setFrozenRows(sheet, 1);
-setFrozenRows(reportSheet, 1);
+  try{
+    checkForMissingNamesOrEmails(sheet, reportSheet);
+  } catch(err) {
+    Logger.log(err);
+    reportSummaryComment += ", Failed: check for missing names and emails";
+    throw new Error(`Check not ran for missing names and emails. Reason: ${err.name}: ${err.message}.  Please revert sheet to previous version, ensure the first name, last name, and email columns are titled "Email", "First Name", and "Last Name" within their header columns, and try again. If this test does not work, record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
 
-removeWhiteSpaceFromCells(sheet, values, reportSheet);
-checkForDuplicateEmails(sheet, reportSheet);
-checkForMissingNamesOrEmails(sheet, reportSheet);
-formatUserDateAddedAndBirthdayColumns(sheet, reportSheet);
-convertStatesToTwoLetterCode(sheet, reportSheet);
-// capitalizeFirstLetterOfWords(sheet, reportSheet);
-checkForInvalidEmails(sheet, reportSheet);
-checkForInvalidPostalCodes(sheet, reportSheet);
-checkForInvalidNumbers(sheet, reportSheet);
+  try {
+    formatUserDateAddedAndBirthdayColumns(sheet, reportSheet);
+  } catch(err) {
+    Logger.log(err);
+    reportSummaryComment += ", Failed: did not format user date added and birthday columns";
+    throw new Error(`Check not ran for formatting of user date added and birthday columns. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
+  
+  try {
+    convertStatesToTwoLetterCode(sheet, reportSheet);
+  } catch (err) {
+    Logger.log(err);
+    reportSummaryComment += ", Failed: check not ran for converting states to two-letter code";
+    throw new Error(`Check not ran for converting states to two-letter code: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
+  
+  // capitalizeFirstLetterOfWords(sheet, reportSheet);
 
+  try {
+    checkForInvalidEmails(sheet, reportSheet);
+  } catch(err) {
+      Logger.log(err);
+      reportSummaryComment += ", Failed: check not ran for invalid emails";
+      throw new Error(`Check not ran for invalid emails. Reason: ${err.name}: ${err.message} at line. Please revert sheet to previous version, ensure the email column is titled "Email" within its header column, and try again. If this test does not work, record this error message, revert sheet to previous version, and contact developer to fix.`);
+    } 
+  
+  try {
+    checkForInvalidPostalCodes(sheet, reportSheet);
+  } catch(err) {
+    Logger.log(err);
+    reportSummaryComment += ", Failed: check not ran for invalid postal codes";
+    throw new Error(`Check not ran for invalid postal codes. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
+  
+  try {
+    checkForInvalidNumbers(sheet, reportSheet);
+  } catch(err) {
+    Logger.log(err);
+    reportSummaryComment += ", Failed: check not ran for invalid home or mobile phone numbers";
+    throw new Error(`Check not ran for invalid home or mobile phone numbers. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
+  
+  try {
+    setCommentsOnReportCell(reportSheet);
+  } catch(err) {
+    Logger.log(err);
+    throw new Error(`Report sheet cell comment not added for summary of checks. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
+  
+}
 
+} catch(err) {
+Logger.log(err);
+throw new Error(`An error occured the the user import template check did not successfully run. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
 }
 
 
   
 // Creates "User Template Check" navigation button within Spreadsheet UI
-
-function onOpen() {
-let ui = SpreadsheetApp.getUi()
-ui.createMenu('User Template Check').addItem('Check User Import Template', 'checkUserImportTemplate').addToUi();
+// try {
+  function onOpen() {
+  let ui = SpreadsheetApp.getUi()
+  ui.createMenu('User Template Check').addItem('Check User Import Template', 'checkUserImportTemplate').addToUi();
 }
+
+// } catch (err) {
+//   SpreadsheetApp.getUi().alert(`An error occured and the user import template check button did not load. Please refresh the page: ${err.name}: ${err.message}`);
+//   Logger.log(err);
+// }
+
