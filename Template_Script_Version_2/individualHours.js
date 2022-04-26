@@ -12,7 +12,17 @@ Wanted the word "Individual" to be inserted during the time the required columsn
 
 The error column is an extra column down so when no "Hours Type" column is provided it does not clash with the errors colum (which is typcially inserted after the last row of values from the start (which would be before the indv values are created)
 
-Think about if it's be worth it do abstract the functionality out of the other function*/
+Think about if it's be worth it do abstract the functionality out of the other function
+
+Things to keep in mind:
+
+Reliant on 'Date Served being spelled correctly for format to run'
+
+Anything in column 5 will be overriden
+
+re-wrote some function due to slightly custom needs with indv hours template checker
+
+*/
 
 
 
@@ -183,6 +193,8 @@ function formatDateServedColumn(sheetBinding, reportSheetBinding, columnsHeaders
         Logger.log(err);
         throw new Error(`Report sheet cell comment not added for summary of checks. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
       }
+
+      SpreadsheetApp.getUi().alert("Individual Hours Import Check Complete");
   
   
     }
