@@ -30,6 +30,8 @@ Goals met:
  Create documentation of script
  Add date served formatting, email check and validation, and hours check for individual hours template DONE YASSS
  Publish the script privately for use by those frome the galaxydigital.com domain
+ insert head columns automatically (data will be positio based)
+ insert header columns for loggically for users at the end (i.e. "Email => "Contact Email")
 
 
 
@@ -82,6 +84,8 @@ const validateEmail = (email) => {
 //   let range = sheet.getDataRange();
 
 // }
+
+
 const WHITE_SPACE_REMOVED_COMMENT = 'Whitespace Removed';
 const DUPLICATE_EMAIL_COMMENT = 'Duplicate email';
 const FIRST_NAME_MISSING_COMMENT = 'First name missing';
@@ -362,128 +366,129 @@ function createArrayOfNamesAndEmail(firstNameRangeBinding, lastNameRangeBinding,
 }
 
 
-function checkForMissingNamesOrEmails(sheetBinding, reportSheetBinding, columnsHeadersBinding, reportSummaryCommentsBinding, reportSummaryColumnPositionBinding) {
-  let headerRow = 1;
-  let firstNameRange = getColumnRange('First Name', sheetBinding, columnsHeadersBinding);
-  let firstNameRangePosition = firstNameRange.getColumn();
-  let lastNameRange = getColumnRange('Last Name', sheetBinding, columnsHeadersBinding);
-  let lastNameRangePosition = lastNameRange.getColumn();
-  let emailColumnRange = getColumnRange('Email', sheetBinding, columnsHeadersBinding);
-  let emailColumnPosition = emailColumnRange.getColumn();
-  let firstNameLastNameEmailValueArray = createArrayOfNamesAndEmail(firstNameRange, lastNameRange, emailColumnRange);
+// function checkForMissingNamesOrEmails(sheetBinding, reportSheetBinding, columnsHeadersBinding, reportSummaryCommentsBinding, reportSummaryColumnPositionBinding) {
+//   let headerRow = 1;
+//   let firstNameRange = getColumnRange('First Name', sheetBinding, columnsHeadersBinding);
+//   let firstNameRangePosition = firstNameRange.getColumn();
+//   let lastNameRange = getColumnRange('Last Name', sheetBinding, columnsHeadersBinding);
+//   let lastNameRangePosition = lastNameRange.getColumn();
+//   let emailColumnRange = getColumnRange('Email', sheetBinding, columnsHeadersBinding);
+//   let emailColumnPosition = emailColumnRange.getColumn();
+//   let firstNameLastNameEmailValueArray = createArrayOfNamesAndEmail(firstNameRange, lastNameRange, emailColumnRange);
 
-  for (let i = 0; i < firstNameLastNameEmailValueArray.length; i +=1) {
+//   for (let i = 0; i < firstNameLastNameEmailValueArray.length; i +=1) {
 
-    let row = i + 2;
-    let firstName = String(firstNameLastNameEmailValueArray[i][0]);
-    let firstNameCurrentCell = getSheetCell(sheetBinding, row, firstNameRangePosition);
-    let mainSheetFNHeaderCell = getSheetCell(sheetBinding, headerRow, firstNameRangePosition);
-    let reportSheetCurrentFNCell = getSheetCell(reportSheetBinding, row, firstNameRangePosition);
-    let lastName = String(firstNameLastNameEmailValueArray[i][1]);
-    let lastNameCurrentCell = getSheetCell(sheetBinding, row, lastNameRangePosition);
-    let mainSheetLNHeaderCell = getSheetCell(sheetBinding, headerRow, lastNameRangePosition);
-    let reportSheetLNCurrentCell = getSheetCell(reportSheetBinding, row, lastNameRangePosition);
-    let email = String(firstNameLastNameEmailValueArray[i][2]);
-    let emailCurrentCell = getSheetCell(sheetBinding, row, emailColumnPosition);
-    let mainSheetEmailHeaderCell = getSheetCell(sheetBinding, headerRow, emailColumnPosition);
-    let reportSheetEmailCurrentCell = getSheetCell(reportSheetBinding, row, emailColumnPosition);
+//     let row = i + 2;
+//     let firstName = String(firstNameLastNameEmailValueArray[i][0]);
+//     let firstNameCurrentCell = getSheetCell(sheetBinding, row, firstNameRangePosition);
+//     let mainSheetFNHeaderCell = getSheetCell(sheetBinding, headerRow, firstNameRangePosition);
+//     let reportSheetCurrentFNCell = getSheetCell(reportSheetBinding, row, firstNameRangePosition);
+//     let lastName = String(firstNameLastNameEmailValueArray[i][1]);
+//     let lastNameCurrentCell = getSheetCell(sheetBinding, row, lastNameRangePosition);
+//     let mainSheetLNHeaderCell = getSheetCell(sheetBinding, headerRow, lastNameRangePosition);
+//     let reportSheetLNCurrentCell = getSheetCell(reportSheetBinding, row, lastNameRangePosition);
+//     let email = String(firstNameLastNameEmailValueArray[i][2]);
+//     let emailCurrentCell = getSheetCell(sheetBinding, row, emailColumnPosition);
+//     let mainSheetEmailHeaderCell = getSheetCell(sheetBinding, headerRow, emailColumnPosition);
+//     let reportSheetEmailCurrentCell = getSheetCell(reportSheetBinding, row, emailColumnPosition);
 
-    if (firstName.length !== 0 || lastName.length !== 0 || email.length !== 0) {
-      firstNameLastNameEmailValueArray[i].forEach((val, index) => {
-      let currentCellValue = String(val);
-      if (currentCellValue === "") {
-        switch(index) {
-          case 0: 
-            setSheetCellBackground(reportSheetCurrentFNCell, LIGHT_RED_HEX_CODE);
-            setSheetCellBackground(firstNameCurrentCell, LIGHT_RED_HEX_CODE);
-            setSheetCellBackground(mainSheetFNHeaderCell, LIGHT_RED_HEX_CODE);
-            insertCommentToSheetCell(reportSheetCurrentFNCell, FIRST_NAME_MISSING_COMMENT);
-            setErrorColumns(sheetBinding, reportSheetBinding, reportSummaryColumnPositionBinding, row);
-            insertHeaderComment(mainSheetFNHeaderCell, "First Name/Names Missing");
-            break;
-          case 1:
-            setSheetCellBackground(reportSheetLNCurrentCell, LIGHT_RED_HEX_CODE);
-            setSheetCellBackground(lastNameCurrentCell, LIGHT_RED_HEX_CODE);
-            setSheetCellBackground(mainSheetLNHeaderCell, LIGHT_RED_HEX_CODE);
-            insertCommentToSheetCell(reportSheetLNCurrentCell, LAST_NAME_MISSING_COMMENT);
-            setErrorColumns(sheetBinding, reportSheetBinding, reportSummaryColumnPositionBinding, row);
-            insertHeaderComment(mainSheetLNHeaderCell, "Last Name/Names Missing");
-            break;
-          case 2:
-            setSheetCellBackground(reportSheetEmailCurrentCell, LIGHT_RED_HEX_CODE);
-            setSheetCellBackground(emailCurrentCell, LIGHT_RED_HEX_CODE);
-            setSheetCellBackground(mainSheetEmailHeaderCell, LIGHT_RED_HEX_CODE);
-            insertCommentToSheetCell(reportSheetEmailCurrentCell, EMAIL_MISSING_COMMENT);
-            setErrorColumns(sheetBinding, reportSheetBinding, reportSummaryColumnPositionBinding, row);
-            insertHeaderComment(mainSheetEmailHeaderCell, "Email/Emails Missing");
-            break;
-        }
-      }
-    })
-  }
-}
-reportSummaryCommentsBinding.push("Success: checked for missing names and emails");
-}
+//     if (firstName.length !== 0 || lastName.length !== 0 || email.length !== 0) {
+//       firstNameLastNameEmailValueArray[i].forEach((val, index) => {
+//       let currentCellValue = String(val);
+//       if (currentCellValue === "") {
+//         switch(index) {
+//           case 0: 
+//             setSheetCellBackground(reportSheetCurrentFNCell, LIGHT_RED_HEX_CODE);
+//             setSheetCellBackground(firstNameCurrentCell, LIGHT_RED_HEX_CODE);
+//             setSheetCellBackground(mainSheetFNHeaderCell, LIGHT_RED_HEX_CODE);
+//             insertCommentToSheetCell(reportSheetCurrentFNCell, FIRST_NAME_MISSING_COMMENT);
+//             setErrorColumns(sheetBinding, reportSheetBinding, reportSummaryColumnPositionBinding, row);
+//             insertHeaderComment(mainSheetFNHeaderCell, "First Name/Names Missing");
+//             break;
+//           case 1:
+//             setSheetCellBackground(reportSheetLNCurrentCell, LIGHT_RED_HEX_CODE);
+//             setSheetCellBackground(lastNameCurrentCell, LIGHT_RED_HEX_CODE);
+//             setSheetCellBackground(mainSheetLNHeaderCell, LIGHT_RED_HEX_CODE);
+//             insertCommentToSheetCell(reportSheetLNCurrentCell, LAST_NAME_MISSING_COMMENT);
+//             setErrorColumns(sheetBinding, reportSheetBinding, reportSummaryColumnPositionBinding, row);
+//             insertHeaderComment(mainSheetLNHeaderCell, "Last Name/Names Missing");
+//             break;
+//           case 2:
+//             setSheetCellBackground(reportSheetEmailCurrentCell, LIGHT_RED_HEX_CODE);
+//             setSheetCellBackground(emailCurrentCell, LIGHT_RED_HEX_CODE);
+//             setSheetCellBackground(mainSheetEmailHeaderCell, LIGHT_RED_HEX_CODE);
+//             insertCommentToSheetCell(reportSheetEmailCurrentCell, EMAIL_MISSING_COMMENT);
+//             setErrorColumns(sheetBinding, reportSheetBinding, reportSummaryColumnPositionBinding, row);
+//             insertHeaderComment(mainSheetEmailHeaderCell, "Email/Emails Missing");
+//             break;
+//         }
+//       }
+//     })
+//   }
+// }
+// reportSummaryCommentsBinding.push("Success: checked for missing names and emails");
+// }
 
 function checkFirstThreeColumnsForBlanks(sheetBinding, reportSheetBinding, reportSummaryCommentsBinding, reportSummaryColumnPositionBinding) {
-let rowStartPosition = 2;
-let columnStartPosition = 1;
-let middleColumnPosition = 2;
-let thirdColumnPositon = 3;
-let maxRows = sheetBinding.getMaxRows();
-let totalColumsToCheck = 3;
-let range = sheetBinding.getRange(rowStartPosition, columnStartPosition, maxRows, totalColumsToCheck);
-let values = range.getValues();
+  let rowStartPosition = 2;
+  let columnStartPosition = 1;
+  let middleColumnPosition = 2;
+  let thirdColumnPositon = 3;
+  let maxRows = sheetBinding.getMaxRows();
+  let totalColumsToCheck = 3;
+  let range = sheetBinding.getRange(rowStartPosition, columnStartPosition, maxRows, totalColumsToCheck);
+  let values = range.getValues();
 
-for (let row = 0; row < values.length; row += 1) {
-  let headerRowPosition = 1;
-  let cellRow = row + 2;
-  let currentRow = values[row];
-  let item1 = currentRow[0];
-  let item1CurrentCell = getSheetCell(sheetBinding, cellRow, columnStartPosition);
-  let item1ReportCurrentCell = getSheetCell(reportSheetBinding, cellRow, columnStartPosition);
-  let item1HeaderCell = getSheetCell(sheetBinding, headerRowPosition, columnStartPosition);
-  let item2 = currentRow[1];
-  let item2CurrentCell = getSheetCell(sheetBinding, cellRow, middleColumnPosition);
-  let item2ReportCurrentCell = getSheetCell(reportSheetBinding, cellRow, middleColumnPosition);
-  let item2HeaderCell = getSheetCell(sheetBinding, headerRowPosition, middleColumnPosition);
-  let item3 = currentRow[2];
-  let item3CurrentCell = getSheetCell(sheetBinding, cellRow, thirdColumnPositon);
-  let item3ReportCell = getSheetCell(reportSheetBinding, cellRow, thirdColumnPositon);
-  let item3HeaderCell = getSheetCell(reportSheetBinding, headerRowPosition, thirdColumnPositon);
+  for (let row = 0; row < values.length; row += 1) {
+    let headerRowPosition = 1;
+    let cellRow = row + 2;
+    let currentRow = values[row];
+    let item1 = currentRow[0];
+    let item1CurrentCell = getSheetCell(sheetBinding, cellRow, columnStartPosition);
+    let item1ReportCurrentCell = getSheetCell(reportSheetBinding, cellRow, columnStartPosition);
+    let item1HeaderCell = getSheetCell(sheetBinding, headerRowPosition, columnStartPosition);
+    let item2 = currentRow[1];
+    let item2CurrentCell = getSheetCell(sheetBinding, cellRow, middleColumnPosition);
+    let item2ReportCurrentCell = getSheetCell(reportSheetBinding, cellRow, middleColumnPosition);
+    let item2HeaderCell = getSheetCell(sheetBinding, headerRowPosition, middleColumnPosition);
+    let item3 = currentRow[2];
+    let item3CurrentCell = getSheetCell(sheetBinding, cellRow, thirdColumnPositon);
+    let item3ReportCell = getSheetCell(reportSheetBinding, cellRow, thirdColumnPositon);
+    let item3HeaderCell = getSheetCell(sheetBinding, headerRowPosition, thirdColumnPositon);
 
-  if (item1.length !== 0 || item2.length !== 0  || item3.length !== 0) {
-    currentRow.forEach((val, index) => {
-      if (val === "") {
-        switch (index) {
-          case 0:
-            setSheetCellBackground(item1CurrentCell, LIGHT_RED_HEX_CODE);
-            setSheetCellBackground(item1ReportCurrentCell, LIGHT_RED_HEX_CODE);
-            setSheetCellBackground(item1HeaderCell, LIGHT_RED_HEX_CODE);
-            insertCommentToSheetCell(item1ReportCurrentCell, VALUES_MISSING_COMMENT);
-            setErrorColumns(sheetBinding, reportSheetBinding, reportSummaryColumnPositionBinding, cellRow);
-            insertHeaderComment(item1HeaderCell, VALUES_MISSING_COMMENT);
-            break;
-          case 1:
-            setSheetCellBackground(item2CurrentCell, LIGHT_RED_HEX_CODE);
-            setSheetCellBackground(item2ReportCurrentCell, LIGHT_RED_HEX_CODE);
-            setSheetCellBackground(item2HeaderCell, LIGHT_RED_HEX_CODE);
-            insertCommentToSheetCell(item2ReportCurrentCell, VALUES_MISSING_COMMENT);
-            setErrorColumns(sheetBinding, reportSheetBinding, reportSummaryColumnPositionBinding, cellRow);
-            insertHeaderComment(item2HeaderCell, VALUES_MISSING_COMMENT);
-            break;
-          case 2:
-            setSheetCellBackground(item3CurrentCell, LIGHT_RED_HEX_CODE);
-            setSheetCellBackground(item3ReportCell, LIGHT_RED_HEX_CODE);
-            setSheetCellBackground(item3HeaderCell, LIGHT_RED_HEX_CODE);
-            insertCommentToSheetCell(item3ReportCell, VALUES_MISSING_COMMENT);
-            insertHeaderComment(item3HeaderCell, VALUES_MISSING_COMMENT);
-            break;
+    if (item1.length !== 0 || item2.length !== 0  || item3.length !== 0) {
+      currentRow.forEach((val, index) => {
+        if (val === "") {
+          switch (index) {
+            case 0:
+              setSheetCellBackground(item1CurrentCell, LIGHT_RED_HEX_CODE);
+              setSheetCellBackground(item1ReportCurrentCell, LIGHT_RED_HEX_CODE);
+              setSheetCellBackground(item1HeaderCell, LIGHT_RED_HEX_CODE);
+              insertCommentToSheetCell(item1ReportCurrentCell, VALUES_MISSING_COMMENT);
+              setErrorColumns(sheetBinding, reportSheetBinding, reportSummaryColumnPositionBinding, cellRow);
+              insertHeaderComment(item1HeaderCell, VALUES_MISSING_COMMENT);
+              break;
+            case 1:
+              setSheetCellBackground(item2CurrentCell, LIGHT_RED_HEX_CODE);
+              setSheetCellBackground(item2ReportCurrentCell, LIGHT_RED_HEX_CODE);
+              setSheetCellBackground(item2HeaderCell, LIGHT_RED_HEX_CODE);
+              insertCommentToSheetCell(item2ReportCurrentCell, VALUES_MISSING_COMMENT);
+              setErrorColumns(sheetBinding, reportSheetBinding, reportSummaryColumnPositionBinding, cellRow);
+              insertHeaderComment(item2HeaderCell, VALUES_MISSING_COMMENT);
+              break;
+            case 2:
+              setSheetCellBackground(item3CurrentCell, LIGHT_RED_HEX_CODE);
+              setSheetCellBackground(item3ReportCell, LIGHT_RED_HEX_CODE);
+              setSheetCellBackground(item3HeaderCell, LIGHT_RED_HEX_CODE);
+              insertCommentToSheetCell(item3ReportCell, VALUES_MISSING_COMMENT);
+              setErrorColumns(sheetBinding, reportSheetBinding, reportSummaryColumnPositionBinding, cellRow);
+              insertHeaderComment(item3HeaderCell, VALUES_MISSING_COMMENT);
+              break;
+          }
         }
-      }
-    });
+      });
+    }
   }
-}
 
 reportSummaryCommentsBinding.push("Success: checked for missing values in first three columns");
 
@@ -600,7 +605,7 @@ if (birthdayColumn && userDateAddedColumn) {
 
 
 function convertStatesToTwoLetterCode(sheetBinding, reportSheetBinding, columnsHeadersBinding, reportSummaryCommentsBinding) {
-  let stateColumnRange = getColumnRange('State (Ex: NH)', sheetBinding, columnsHeadersBinding);
+  let stateColumnRange = getColumnRange('State', sheetBinding, columnsHeadersBinding);
 
   if (stateColumnRange) {
     let stateColumnRangeValues = getValues(stateColumnRange).map(val => {
@@ -1030,7 +1035,7 @@ throw new Error(`An error occured the the user import template check did not suc
 // try {
   function onOpen() {
   let ui = SpreadsheetApp.getUi()
-  ui.createMenu('Import Teplate Checker').addItem('Check User Import Template', 'checkUserImportTemplate').addItem('Check Individual Hours Import Template', 'checkIndvImportTemplate').addToUi();
+  ui.createMenu('Import Teplate Checker').addItem('Check User Import Template', 'checkUserImportTemplate').addItem('Check Individual Hours Import Template', 'checkIndvImportTemplate').addItem('Check Responses and Hours Template', 'hoursAndResponsesCheck').addItem('Check Agencies/Programs Import Template', 'programsAndAgenciesTemplateCheck').addToUi();
 }
 
 // } catch (err) {
