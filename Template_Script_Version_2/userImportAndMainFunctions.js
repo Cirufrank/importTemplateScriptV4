@@ -42,6 +42,7 @@ Goals met:
   Needs each column header to be perfect
   The trim whitespace function is relied on heavily by other functions
   Assumes that there is a zip, phone, and mobile column
+  Will have the opportunity to consolidate many functions once the templates are position-based
 
 
 
