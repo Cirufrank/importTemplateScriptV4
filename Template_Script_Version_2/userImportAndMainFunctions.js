@@ -24,13 +24,15 @@ Goals met:
  Refactored the code to not have global variables declared with let so the code can be manageablly expanded to additional sheets
  Each function (such as check user templte) will have its own reprot sheet title so report sheets do not get deleted when multiple imports are ran
  Now does relies on column position for checking missing names and emails and such (checks for missing values in first three columns)
+ Clears formatting of values at beggining of import
+ Checks for invalid states and test for Canada states and postal codes
 
  ToDos: 
  
  Create documentation of script
  Add date served formatting, email check and validation, and hours check for individual hours template DONE YASSS
  Publish the script privately for use by those frome the galaxydigital.com domain
- insert head columns automatically (data will be positio based)
+ insert head columns automatically (data will be position based)
  insert header columns for loggically for users at the end (i.e. "Email => "Contact Email")
 
 
@@ -102,6 +104,7 @@ const INVALID_PHONE_NUMBER_COMMENT = 'Invalid phone number';
 const LIGHT_GREEN_HEX_CODE = '#b6d7a8';
 const LIGHT_RED_HEX_CODE = '#f4cccc';
 const ERROR_FOUND_MESSAGE_FOR_ROW = 'ERROR FOUND';
+const INVALID_STATE_COMMENT = 'Invalid State';
 const US_STATE_TO_ABBREVIATION = {
   "Alabama": "AL",
   "Alaska": "AK",
@@ -162,6 +165,7 @@ const US_STATE_TO_ABBREVIATION = {
   "U.S. Virgin Islands": "VI",
 }
 const usFullStateNames = Object.keys(US_STATE_TO_ABBREVIATION);
+const usStateAbbreviations = Object.values(US_STATE_TO_ABBREVIATION);
 const ss = SpreadsheetApp.getActiveSpreadsheet();
 
 function getSheet(sheetName) {
@@ -284,6 +288,15 @@ searchRange.trimWhitespace();
 //Remove later or use for logging events
 // console.log(cellsTrimmed);
 reportSummaryCommentsBinding.push("Success: removed white space from cells");
+}
+
+function removeFormattingFromSheetCells(sheetBinding, valuesToCheck, reportSummaryCommentsBinding) {
+let rowCount = valuesToCheck.length;
+let columnCount = valuesToCheck[0].length;
+let searchRange = sheetBinding.getRange(1, 1, rowCount, columnCount);
+searchRange.clearFormat();
+
+reportSummaryCommentsBinding.push("Success: removed formatting from cells");
 }
 
 
@@ -640,7 +653,47 @@ function convertStatesToTwoLetterCode(sheetBinding, reportSheetBinding, columnsH
 
 
   } else {
-    reportSummaryCommentsBinding.push("Success: ran check to convert states to two-digit format but did not find column");
+    reportSummaryCommentsBinding.push("Success: ran check to convert states to two-digit format, but did not find column");
+
+  }
+  
+
+}
+
+function validateStates(sheetBinding, reportSheetBinding, columnsHeadersBinding, reportSummaryCommentsBinding, reportSummaryColumnPositionBinding) {
+  let stateColumnRange = getColumnRange('State', sheetBinding, columnsHeadersBinding);
+
+  if (stateColumnRange) {
+    let stateColumnRangeValues = getValues(stateColumnRange);
+
+    let stateColumnRangePosition = stateColumnRange.getColumn();
+    
+    stateColumnRangeValues.forEach((val, index) => {
+      let currentState = String(val);
+      // SpreadsheetApp.getUi().alert(`${currentState}`); Testing
+      // SpreadsheetApp.getUi().alert(`${currentState.length}`); Testing
+      
+      if (!usStateAbbreviations.includes(currentState) && currentState.length !== 0) {
+        let headerRow = 1;
+        let row = index + 2;
+        let currentCell = getSheetCell(sheetBinding, row, stateColumnRangePosition);
+        let currentReportCell = getSheetCell(reportSheetBinding, row, stateColumnRangePosition);
+        let mainSheetHeaderCell = getSheetCell(sheetBinding, headerRow, stateColumnRangePosition);
+        setSheetCellBackground(currentCell, LIGHT_RED_HEX_CODE);
+        setSheetCellBackground(currentReportCell, LIGHT_RED_HEX_CODE);
+        insertCommentToSheetCell(currentReportCell, INVALID_STATE_COMMENT);
+        setSheetCellBackground(mainSheetHeaderCell, LIGHT_RED_HEX_CODE);
+        insertHeaderComment(mainSheetHeaderCell, "Invalid State/States found");
+        setErrorColumns(sheetBinding, reportSheetBinding, reportSummaryColumnPositionBinding, row);
+
+      }
+  });
+
+  reportSummaryCommentsBinding.push("Success: ran check for invalid states");
+
+
+  } else {
+    reportSummaryCommentsBinding.push("Success: ran check for invalid states, but did not find column");
 
   }
   
@@ -948,6 +1001,14 @@ try {
     throw new Error(`White space not removed from cells. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
   }
 
+  try {
+    removeFormattingFromSheetCells(sheet, values, reportSummaryComments);
+  } catch (err) {
+    Logger.log(err);
+    reportSummaryComments.push("Failed: remove formatting from cells");
+    throw new Error(`Formatting not removed from cells. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
+
   clearSheetSummaryColumn(sheet, reportSummaryColumnPosition);
   clearSheetSummaryColumn(reportSheet, reportSummaryColumnPosition);
   setErrorColumnHeaderInMainSheet(sheet, reportSummaryColumnPosition);
@@ -982,6 +1043,14 @@ try {
     Logger.log(err);
     reportSummaryComments.push("Failed: check not ran for converting states to two-letter code");
     throw new Error(`Check not ran for converting states to two-letter code: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
+
+  try {
+    validateStates(sheet, reportSheet, columnHeaders, reportSummaryComments, reportSummaryColumnPosition);
+  } catch (err) {
+    Logger.log(err);
+    reportSummaryComments.push("Failed: check not ran for invalid stats");
+    throw new Error(`Check not ran for invalid states: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
   }
   
   // capitalizeFirstLetterOfWords(sheet, reportSheet);

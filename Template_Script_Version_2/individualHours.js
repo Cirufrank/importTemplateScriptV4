@@ -160,6 +160,14 @@ try {
         throw new Error(`White space not removed from cells. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
       }
 
+      try {
+        removeFormattingFromSheetCells(sheet, values, reportSummaryComments);
+      } catch (err) {
+        Logger.log(err);
+        reportSummaryComments.push("Failed: remove formatting from cells");
+        throw new Error(`Formatting not removed from cells. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+      }
+
       clearSheetSummaryColumn(sheet, reportSummaryColumnPosition);
       clearSheetSummaryColumn(reportSheet, reportSummaryColumnPosition);
       setErrorColumnHeaderInMainSheet(sheet, reportSummaryColumnPosition);
