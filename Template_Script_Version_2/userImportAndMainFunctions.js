@@ -97,6 +97,7 @@ const EMAIL_MISSING_COMMENT = 'Email missing';
 const VALUES_MISSING_COMMENT = 'Values Missing';
 const DATE_FORMATTED_YYYY_MM_DD_COMMENT = 'Date formatted to YYYY-MM-DD';
 const STATE_TWO_LETTER_CODE_COMMENT = 'State converted to two letter code';
+const GENDER_OPTION_EXPANDED_COMMENT = 'Gender option expanded';
 const CAPITALIZATION_FUNCTION_RAN_ON_FN_COMMENT = 'Capitalization function ran on first name column';
 const CAPITALIZATION_FUNCTION_RAN_ON_LN_COMMENT = 'Capitalization function ran on last name column';
 const INVALID_EMAIL_COMMENT = 'Invalid email format';
@@ -106,6 +107,7 @@ const LIGHT_GREEN_HEX_CODE = '#b6d7a8';
 const LIGHT_RED_HEX_CODE = '#f4cccc';
 const ERROR_FOUND_MESSAGE_FOR_ROW = 'ERROR FOUND';
 const INVALID_STATE_COMMENT = 'Invalid State';
+const INVALID_GENDER_OPTION = 'Invalid Gender Option';
 const US_STATE_TO_ABBREVIATION = {
   "Alabama": "AL",
   "Alaska": "AK",
@@ -165,9 +167,18 @@ const US_STATE_TO_ABBREVIATION = {
   "United States Minor Outlying Islands": "UM",
   "U.S. Virgin Islands": "VI",
 }
+const GENDER_OPTIONS_ABBREVIATION_TO_FULL = {
+  "F":"Female",
+  "M":"Male",
+  "N/A":"",
+}
+const FULL_GENDER_OPTIONS = ['female', 'male','prefer not to say', 'other'];
+
 const usFullStateNames = Object.keys(US_STATE_TO_ABBREVIATION);
 const usStateAbbreviations = Object.values(US_STATE_TO_ABBREVIATION);
+const genderOptionsAbbreviations = Object.keys(GENDER_OPTIONS_ABBREVIATION_TO_FULL);
 const ss = SpreadsheetApp.getActiveSpreadsheet();
+
 
 function getSheet(sheetName) {
   return ss.getSheetByName(sheetName);
@@ -294,7 +305,7 @@ reportSummaryCommentsBinding.push("Success: removed white space from cells");
 function removeFormattingFromSheetCells(sheetBinding, valuesToCheck, reportSummaryCommentsBinding) {
 let rowCount = valuesToCheck.length;
 let columnCount = valuesToCheck[0].length;
-let searchRange = sheetBinding.getRange(1, 1, rowCount, columnCount);
+let searchRange = sheetBinding.getRange(2, 1, rowCount, columnCount);
 searchRange.clearFormat();
 
 reportSummaryCommentsBinding.push("Success: removed formatting from cells");
@@ -701,6 +712,83 @@ function validateStates(sheetBinding, reportSheetBinding, columnsHeadersBinding,
 
 }
 
+function convertGenderOptionAbbreviationToFullWord(sheetBinding, reportSheetBinding, columnsHeadersBinding, reportSummaryCommentsBinding) {
+  let genderOptionColumnRange = getColumnRange('Gender', sheetBinding, columnsHeadersBinding);
+
+  if (genderOptionColumnRange) {
+    let genderOptionColumnRangeValues = getValues(genderOptionColumnRange).map(val => {
+      let currentGenderOption = String(val);
+      if (currentGenderOption.length === 1) return currentGenderOption.toUpperCase();
+    });
+
+    let genderOptionColumnRangePosition = genderOptionColumnRange.getColumn();
+    
+    genderOptionColumnRangeValues.forEach((val, index) => {
+      let currentGenderOption = String(val);
+      // SpreadsheetApp.getUi().alert(`${currentState}`); Testing
+      // SpreadsheetApp.getUi().alert(`${currentState.length}`); Testing
+      let row = index + 2;
+      let currentCell = getSheetCell(sheetBinding, row, genderOptionColumnRangePosition);
+      let currentReportCell = getSheetCell(reportSheetBinding, row, genderOptionColumnRangePosition);
+      if (genderOptionsAbbreviations.includes(currentGenderOption)) {
+        currentCell.setValue(GENDER_OPTIONS_ABBREVIATION_TO_FULL[currentGenderOption]);
+        setSheetCellBackground(currentReportCell, LIGHT_RED_HEX_CODE);
+        insertCommentToSheetCell(currentReportCell, GENDER_OPTION_EXPANDED_COMMENT);
+
+      }
+  });
+
+  reportSummaryCommentsBinding.push("Success: ran check to expand gender option abbrevitation to full option (i.e. F => Female)");
+
+
+  } else {
+    reportSummaryCommentsBinding.push("Success: ran check to expand gender option abbrevitation to full option (i.e. F => Female), but did not find column");
+
+  }
+  
+
+}
+
+function validateGenderOptions(sheetBinding, reportSheetBinding, columnsHeadersBinding, reportSummaryCommentsBinding, reportSummaryColumnPositionBinding) {
+  let genderOptionColumnRange = getColumnRange('Gender', sheetBinding, columnsHeadersBinding);
+
+  if (genderOptionColumnRange) {
+    let genderOptionColumnRangeValues = getValues(genderOptionColumnRange);
+
+    let genderOptionColumnRangePoition = genderOptionColumnRange.getColumn();
+    
+    genderOptionColumnRangeValues.forEach((val, index) => {
+      let currentGenderOption = String(val).toLowerCase();
+      // SpreadsheetApp.getUi().alert(`${currentState}`); Testing
+      // SpreadsheetApp.getUi().alert(`${currentState.length}`); Testing
+      
+      if (!FULL_GENDER_OPTIONS.includes(currentGenderOption) && currentGenderOption.length !== 0) {
+        let headerRow = 1;
+        let row = index + 2;
+        let currentCell = getSheetCell(sheetBinding, row, genderOptionColumnRangePoition);
+        let currentReportCell = getSheetCell(reportSheetBinding, row, genderOptionColumnRangePoition);
+        let mainSheetHeaderCell = getSheetCell(sheetBinding, headerRow, genderOptionColumnRangePoition);
+        setSheetCellBackground(currentCell, LIGHT_RED_HEX_CODE);
+        setSheetCellBackground(currentReportCell, LIGHT_RED_HEX_CODE);
+        insertCommentToSheetCell(currentReportCell, INVALID_GENDER_OPTION);
+        setSheetCellBackground(mainSheetHeaderCell, LIGHT_RED_HEX_CODE);
+        insertHeaderComment(mainSheetHeaderCell, "Invalid Gender Option/Options found");
+        setErrorColumns(sheetBinding, reportSheetBinding, reportSummaryColumnPositionBinding, row);
+
+      }
+  });
+
+  reportSummaryCommentsBinding.push("Success: ran check for invalid gender options");
+
+
+  } else {
+    reportSummaryCommentsBinding.push("Success: ran check for invalid gender options, but did not find column");
+
+  }
+  
+
+}
+
 
 
 function capitalizeFirstLetterOfAName(name) {
@@ -1052,6 +1140,22 @@ try {
     Logger.log(err);
     reportSummaryComments.push("Failed: check not ran for invalid stats");
     throw new Error(`Check not ran for invalid states: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
+
+  try {
+    convertGenderOptionAbbreviationToFullWord(sheet, reportSheet, columnHeaders, reportSummaryComments);
+  } catch (err) {
+    Logger.log(err);
+    reportSummaryComments.push("Failed: check not ran for converting gender abbreviation to full option");
+    throw new Error(`Check not ran for converting gender abbreviation to full option: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
+
+  try {
+    validateGenderOptions(sheet, reportSheet, columnHeaders, reportSummaryComments, reportSummaryColumnPosition);
+  } catch (err) {
+    Logger.log(err);
+    reportSummaryComments.push("Failed: check not ran for invalid gender options");
+    throw new Error(`Check not ran for invalid gender options: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
   }
   
   // capitalizeFirstLetterOfWords(sheet, reportSheet);

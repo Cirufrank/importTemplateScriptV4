@@ -258,6 +258,14 @@ function checkFirstFourColumnsForBlanks(sheetBinding, reportSheetBinding, report
     }
   
     try {
+      validateStates(sheet, reportSheet, columnHeaders, reportSummaryComments, reportSummaryColumnPosition);
+    } catch (err) {
+      Logger.log(err);
+      reportSummaryComments.push("Failed: check not ran for invalid stats");
+      throw new Error(`Check not ran for invalid states: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+    }
+  
+    try {
       checkForInvalidEmails(sheet, reportSheet, columnHeaders, reportSummaryComments, reportSummaryColumnPosition);
     } catch(err) {
         Logger.log(err);
