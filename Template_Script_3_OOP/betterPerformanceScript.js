@@ -687,8 +687,8 @@ class UsersNeedsAndAgenciesTemplate extends Template {
 }
 
 class UserTemplate extends UsersNeedsAndAgenciesTemplate {
-  constructor(templateName, reportSheetName) {
-    super(templateName, reportSheetName);
+  constructor() {
+    super();
     this._duplicateEmailComment = 'Duplicate Email';
     this._duplicateEmailsFoundMessage = "Duplicate Email/Emails Found";
     this._genderExpandedComment = 'Gender option expanded';
@@ -2118,7 +2118,7 @@ throw new Error(`An error occured the the user import template check did not suc
 // try {
   function onOpen() {
   let ui = SpreadsheetApp.getUi()
-  ui.createMenu('Import Teplate Checker').addItem('Check User Import Template', 'checkUserImportTemplate').addItem('Check Individual Hours Import Template', 'checkIndvImportTemplate').addItem('Check Responses and Hours Template', 'hoursAndResponsesCheck').addItem('Check Agencies/Programs Import Template', 'programsAndAgenciesTemplateCheck').addToUi();
+  ui.createMenu('Import Teplate Checker').addItem('Check User Import Template', 'checkUserImportTemplate').addItem('Check Individual Hours Import Template', 'checkIndvImportTemplate').addItem('Check Responses and Hours Template', 'hoursAndResponsesCheck').addItem('Check Agencies/Programs Import Template', 'programsAndAgenciesTemplateCheck').addItem('Check Needs/Opportunities ImportTemplate', 'needsAndOpportunitiesTemplateCheck').addItem('User Groups Template Check', 'userGroupsTemplateCheck').addToUi();
 }
 
 // } catch (err) {
