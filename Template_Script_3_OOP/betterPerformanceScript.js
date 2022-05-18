@@ -699,7 +699,7 @@ class UserTemplate extends UsersNeedsAndAgenciesTemplate {
       "N/A":"",
     }
     this._genderOptionsAbbreviations = Object.keys(this._genderOptionsAbbreviationToFullObject);
-    this._fullGenderOptions = ['female', 'male','prefer not to say', 'other'];
+    this._fullGenderOptions = ['female', 'male','prefer not to say', 'other', 'f','m'];
     this._foundEmailColumnAndCheckedForDuplicatesComment = "Success: checked emails column for duplicates";
     this._foundFirstThreeColumnsAndCheckedForMissingValuesComment = "Success: checked for missing values in first three columns";
     this._foundUserDateAddedAndBirthdayColumnsAndFormattedThemComment = "Success: formatted birthday column and user date added column";
@@ -751,8 +751,8 @@ class UserTemplate extends UsersNeedsAndAgenciesTemplate {
     let rules2 = reportSheetBinding.getConditionalFormatRules();
     rules2.push(duplicateEmailsRuleReportSheet);
     reportSheetBinding.setConditionalFormatRules(rules2);
-    reportSheetBinding.sort(emailColumnPosition);
-    this._sheet.sort(emailColumnPosition);
+    reportSheetBinding.sort(emailColumnPosition, true);
+    this._sheet.sort(emailColumnPosition, true);
     this._reportSummaryComments.push(this._foundEmailColumnAndCheckedForDuplicatesComment);
 
   }
@@ -766,16 +766,16 @@ class UserTemplate extends UsersNeedsAndAgenciesTemplate {
     let emailColumnPosition = emailColumnRange.getColumn();
 
     emailColumnValues.forEach((email, index) => {
-      let currentEmail = String(email);
+      let currentEmail = String(email).trim();
       let row = index + 2;
       let nextRow = row + 1;
       let currentCell = this.getSheetCell(this._sheet, row, emailColumnPosition);
-      let nextCell = this.getSheetCell(this._sheet, nextRow, emailColumnPosition);
-      let reportSheetCell = this.getSheetCell(reportSheetBinding, row, emailColumnPosition);
-      let nextReportSheetCell = this.getSheetCell(reportSheetBinding, nextRow, emailColumnPosition)
-      let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, emailColumnPosition);
 
-        if (currentEmail !== "" && this.checkForLightRedHexCode(currentCell)) {
+        if (currentEmail.length > 0 && this.checkForLightRedHexCode(currentCell)) {
+          // let nextCell = this.getSheetCell(this._sheet, nextRow, emailColumnPosition);
+          let reportSheetCell = this.getSheetCell(reportSheetBinding, row, emailColumnPosition);
+          let nextReportSheetCell = this.getSheetCell(reportSheetBinding, nextRow, emailColumnPosition)
+          let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, emailColumnPosition);
           this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
           this.setSheetCellBackground(nextReportSheetCell, this._lightRedHexCode);
           this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
