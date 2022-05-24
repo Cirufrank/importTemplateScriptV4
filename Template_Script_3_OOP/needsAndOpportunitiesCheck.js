@@ -138,7 +138,7 @@ class NeedsAndOpportunitiesTemplate extends UsersNeedsAndAgenciesTemplate {
       } catch(err) {
           Logger.log(err);
           needsAndOpportunitiesTemplate.reportSummaryComments = needsAndOpportunitiesTemplate.failedCheckNotRanForInvalidCommaSeparatedEmails;
-          throw new Error(`Check not ran for invalid additional contact emails. Reason: ${err.name}: ${err.message} at line. Please revert sheet to previous version, ensure the email column is titled "Email" within its header column, and try again. If this test does not work, record this error message, revert sheet to previous version, and contact developer to fix.`);
+          throw new Error(`Check not ran for invalid comma-separated emails. Reason: ${err.name}: ${err.message} at line. Please revert sheet to previous version, ensure the email column is titled "Email" within its header column, and try again. If this test does not work, record this error message, revert sheet to previous version, and contact developer to fix.`);
         } 
     
     try {
@@ -168,6 +168,6 @@ class NeedsAndOpportunitiesTemplate extends UsersNeedsAndAgenciesTemplate {
   
   } catch (err) {
       Logger.log(err);
-      throw new Error(`An error occured the the Agencies/Programs import template check did not successfully run. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+      throw new Error(`An error occured the the Needs/Opportunties import template check did not successfully run. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
   }
   
