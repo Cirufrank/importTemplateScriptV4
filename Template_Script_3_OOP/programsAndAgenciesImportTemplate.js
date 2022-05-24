@@ -18,24 +18,10 @@ class ProgramsAndAgenciesTemplate extends UsersNeedsAndAgenciesTemplate {
   constructor() {
     super();
     this._foundFirstFourColumnsAndCheckedThemForMissingValuesComment = "Success: checked for missing values in first four columns";
-    this._foundAdditionalContactsColumnAndRemovedWhiteSpaceAndEmptyValuesFromAdditionalContactEmailsOnMainSheetHeaderComment = "Removed whitespace and empty values from Additional Contact Emails on main sheet";
-    this._foundAdditionalContactsColumnAndRemovedWhiteSpaceAndEmptyValuesComment = "Success: removed whitespace and empty values from Additional Contact Emails";
-    this._didNotFindAdditionalContactColumnButRanTheFunctionToRemoveWhiteSpaceAndEmptyValuesComment = "Success: removed whitespace and empty values from Additional Contact Emails, but did note find column";
-    this._invalidEmailsFoundHeaderComment = "Invalid Email/Emails found";
-    this._foundAdditionalContactsColumnAndRanCheckForInvalidEmailsComment = "Success: ran check for invalid emails";
-    this._didNotFindAdditionalContactsColumnButRanCheckForInvalidEmailsComment = "Success: ran check for invalid emails, but did not find column";
     this._failedFirstFourColumnsMissingValuesCheckMessage = "Failed: check first four columns for missing values";
-    this._failedRemoveWhiteSpaceAndMissingValuesFromAdditionalContactEmailsMessage = "Failed: did not remove whitespace and empty values from Additional Contact Emails";
-    this._failedCheckNotRanForInvalidAdditonalContactEmails = "Failed: check not ran for invalid additional contact emails";
   }
   get failedFirstFourColumnsMissingValuesCheckMessage() {
     return this._failedFirstFourColumnsMissingValuesCheckMessage;
-  }
-  get failedRemoveWhiteSpaceAndMissingValuesFromAdditionalContactEmailsMessage() {
-    return this._failedRemoveWhiteSpaceAndMissingValuesFromAdditionalContactEmailsMessage;
-  }
-  get failedCheckNotRanForInvalidAdditonalContactEmails() {
-    return this._failedCheckNotRanForInvalidAdditonalContactEmails;
   }
   checkFirstFourColumnsForBlanks(reportSheetBinding) {
     let rowStartPosition = 2;
@@ -114,105 +100,6 @@ class ProgramsAndAgenciesTemplate extends UsersNeedsAndAgenciesTemplate {
   this._reportSummaryComments.push(this._foundFirstFourColumnsAndCheckedThemForMissingValuesComment);
 
   }
-  formatAdditionalContactEmails(reportSheetBinding) {
-    let headerRow = 1;
-    let emailColumnRange = this.getColumnRange('Additional Contacts (emails)', this._sheet);
-
-    if (emailColumnRange) {
-    let emailColumnValues = this.getValues(emailColumnRange);
-    let emailColumnPosition = emailColumnRange.getColumn();
-
-    emailColumnValues.forEach((emailString, index) => {
-      let row = index + 2;
-      let emailArray = String(emailString).split(",");
-
-
-        if (emailArray.length > 1) {
-          let emailArrayNew = emailArray.filter((val) => val.trim().length > 0).map((val) => val.trim()).join(", ");
-          let currentCell = this.getSheetCell(this._sheet, row, emailColumnPosition);
-          let reportSheetHeaderCell = this.getSheetCell(reportSheetBinding, headerRow, emailColumnPosition);
-          let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, emailColumnPosition);
-          let removedWhiteSpaceAndBlanksValue = emailArrayNew;
-          currentCell.setValue(removedWhiteSpaceAndBlanksValue);
-
-            this.insertHeaderComment(reportSheetHeaderCell, this._foundAdditionalContactsColumnAndRemovedWhiteSpaceAndEmptyValuesFromAdditionalContactEmailsOnMainSheetHeaderComment);
-            this.setSheetCellBackground(reportSheetHeaderCell, this._lightRedHexCode);
-            this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
-        }
-
-        });
-
-        this._reportSummaryComments.push(this._foundAdditionalContactsColumnAndRemovedWhiteSpaceAndEmptyValuesComment);
-
-        } else {
-      this._reportSummaryComments.push(this._didNotFindAdditionalContactColumnButRanTheFunctionToRemoveWhiteSpaceAndEmptyValuesComment);
-    }
-    
-  }
-  checkForInvalidAdditionalContactEmails(reportSheetBinding) {
-    let headerRow = 1;
-    let emailColumnRange = this.getColumnRange('Additional Contacts (emails)', this._sheet);
-
-    if (emailColumnRange) {
-      let emailColumnValues = this.getValues(emailColumnRange);
-      let emailColumnPosition = emailColumnRange.getColumn();
-
-    emailColumnValues.forEach((emailArray, index) => {
-      let row = index + 2;
-
-        if (typeof emailArray === 'string') {
-          let currentEmail = emailArray;
-          if (currentEmail !== "" && !this.validateEmail(currentEmail)) {
-            let currentCell = this.getSheetCell(this._sheet, row, emailColumnPosition);
-            let reportSheetCell = this.getSheetCell(reportSheetBinding, row, emailColumnPosition);
-            let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, emailColumnPosition);
-
-            //Line below for testing
-
-            // SpreadsheetApp.getUi().alert(`Invalid Email! ${currentEmail} ${reportSheetCell.getA1Notation()}`);
-            //testing line ends here
-            this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
-            this.setSheetCellBackground(currentCell, this._lightRedHexCode);
-            this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
-            this.insertCommentToSheetCell(reportSheetCell, this._invalidEmailComment);
-            this.insertHeaderComment(mainSheetHeaderCell, this._invalidEmailsFoundHeaderComment);
-            this.setErrorColumns(reportSheetBinding, row);
-          }
-
-        } else {
-          //email array holds all of the rows' email values
-            emailArray.forEach(emailRowArray => {
-              //This creates and array of emails within the current row and each email is validated
-              emailRowArray.split(",").forEach((email) => {
-                let currentEmail = email.trim();
-                if (currentEmail !== "" && !this.validateEmail(currentEmail)) {
-                let currentCell = this.getSheetCell(this._sheet, row, emailColumnPosition);
-                let reportSheetCell = this.getSheetCell(reportSheetBinding, row, emailColumnPosition);
-                let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, emailColumnPosition);
-
-                this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
-                this.setSheetCellBackground(currentCell, this._lightRedHexCode);
-                this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
-                this.insertCommentToSheetCell(reportSheetCell, this._invalidEmailComment);
-                this.insertHeaderComment(mainSheetHeaderCell, this._invalidEmailsFoundHeaderComment);
-                this.setErrorColumns(reportSheetBinding, row);
-                }
-              });
-          });
-
-        }
-
-        
-        }
-      );
-
-      this._reportSummaryComments.push(this._foundAdditionalContactsColumnAndRanCheckForInvalidEmailsComment);
-      
-    } else {
-      this._reportSummaryComments.push(this._didNotFindAdditionalContactsColumnButRanCheckForInvalidEmailsComment);
-    }
-    
-  }
 } 
 
 try {
@@ -284,18 +171,18 @@ try {
     } 
 
     try {
-      programsAndAgenciesTemplate.formatAdditionalContactEmails(reportSheet);
+      programsAndAgenciesTemplate.formatCommaSeparatedLists(reportSheet);
     } catch (err) {
         Logger.log(err);
-        programsAndAgenciesTemplate.reportSummaryComments = programsAndAgenciesTemplate.failedRemoveWhiteSpaceAndMissingValuesFromAdditionalContactEmailsMessage;
-        throw new Error(`Did not remove whitespace and empty values from Additional Contact Emails. Reason: ${err.name}: ${err.message} at line. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+        programsAndAgenciesTemplate.reportSummaryComments = programsAndAgenciesTemplate.failedRemoveWhiteSpaceAndMissingValuesFromCommaSeparatedListsMessage;
+        throw new Error(`Did not remove whitespace and empty values from comma-separated list(s). Reason: ${err.name}: ${err.message} at line. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
     }
 
     try {
-    programsAndAgenciesTemplate.checkForInvalidAdditionalContactEmails(reportSheet);
+    programsAndAgenciesTemplate.checkForInvalidCommaSeparatedEmails(reportSheet);
     } catch(err) {
         Logger.log(err);
-        programsAndAgenciesTemplate.reportSummaryComments = programsAndAgenciesTemplate.failedCheckNotRanForInvalidAdditonalContactEmails;
+        programsAndAgenciesTemplate.reportSummaryComments = programsAndAgenciesTemplate.failedCheckNotRanForInvalidCommaSeparatedEmails;
         throw new Error(`Check not ran for invalid additional contact emails. Reason: ${err.name}: ${err.message} at line. Please revert sheet to previous version, ensure the email column is titled "Email" within its header column, and try again. If this test does not work, record this error message, revert sheet to previous version, and contact developer to fix.`);
       } 
   
@@ -310,7 +197,7 @@ try {
     programsAndAgenciesTemplate.checkForInvalidNumbers(reportSheet);
   } catch(err) {
     Logger.log(err);
-    programsAndAgenciesTemplate.reportSummaryComments = programsAndAgenciesTemplate.failedInvalidHomeAndMobilePhoneNumbersCheck;
+    programsAndAgenciesTemplate.reportSummaryComments = programsAndAgenciesTemplate.failedInvalidPhoneNumbersCheck;
     throw new Error(`Check not ran for invalid home or mobile phone numbers. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
   }
   

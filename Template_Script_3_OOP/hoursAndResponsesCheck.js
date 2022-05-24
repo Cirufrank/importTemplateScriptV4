@@ -136,10 +136,10 @@ try {
           responsesAndHoursTemplate.setErrorColumnHeaderInMainSheet();
 
           try {
-          responsesAndHoursTemplate.formatDateServedColumn(reportSheet);
+          responsesAndHoursTemplate.formatAllDatedColumns(reportSheet);
         } catch(err) {
           Logger.log(err);
-          responsesAndHoursTemplate.reportSummaryComments = responsesAndHoursTemplate.failedDidNotFormatDateServedColumnMessage;
+          responsesAndHoursTemplate.reportSummaryComments = responsesAndHoursTemplate._failedFormatDateColumns;
           throw new Error(`Check not ran for formatting of the date served column. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
         }
     

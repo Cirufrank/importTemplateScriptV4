@@ -27,33 +27,15 @@ re-wrote some function due to slightly custom needs with indv hours template che
 class IndividualHoursTemplate extends Template {
   constructor() {
     super();
-    this._foundDateServedColumnAndFormattedItComment = "Success: formatted date served column";
     this._foundFirstThreeColumnsAndRanCheckForMissingValuesComment = "Success: checked for missing values in first three columns and added the 'Hours Type' column with a record of 'Individual' anywhere that row with records were found";
     this._failedCheckFirstThreeColumnsForBlanksAndAddIndvColumnMessage = "Failed: check first three columns for missing values and add 'Individual' hours type column";
-    this._failedDidNotFormatDateServedColumnMessage = "Failed: did not format date served column";
     this._theWordIndividual = 'Individual';
     this._individualHoursTypeColumnPosition = 5;
   }
   get failedCheckFirstThreeColumnsForBlanksAndAddIndvColumnMessage() {
     return this._failedCheckFirstThreeColumnsForBlanksAndAddIndvColumnMessage;
   }
-  get failedDidNotFormatDateServedColumnMessage() {
-    return this._failedDidNotFormatDateServedColumnMessage;
-  }
-  formatDateServedColumn(reportSheetBinding) {
-    let row = 1;
-    let dateServedColumn = this.getColumnRange('Date Served', this._sheet);
 
-    if (dateServedColumn) {
-      let columnPosition = dateServedColumn.getColumn();
-      let reportSheetHeaderCell = this.getSheetCell(reportSheetBinding, row, columnPosition);
-  
-      this.setColumnToYYYYMMDDFormat(dateServedColumn);
-      this.setSheetCellBackground(reportSheetHeaderCell, this._lightGreenHexCode);
-      this.insertCommentToSheetCell(reportSheetHeaderCell, this._dateFormattedComment);
-      this._reportSummaryComments.push(this._foundDateServedColumnAndFormattedItComment);
-      }
-    }
     setIndividualHoursHeaderCellVal() {
       let headerRow = 1;
       this.getSheetCell(this._sheet, headerRow, this._individualHoursTypeColumnPosition).setValue('Hours Type');
@@ -182,10 +164,10 @@ class IndividualHoursTemplate extends Template {
         }
   
         try {
-        individualHoursTemplate.formatDateServedColumn(reportSheet);
+        individualHoursTemplate.formatAllDatedColumns(reportSheet);
       } catch(err) {
         Logger.log(err);
-        individualHoursTemplate.reportSummaryComments = individualHoursTemplate.failedDidNotFormatDateServedColumnMessage;
+        individualHoursTemplate.reportSummaryComments = individualHoursTemplate._failedFormatDateColumns;
         throw new Error(`Check not ran for formatting of the date served column. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
       }
   

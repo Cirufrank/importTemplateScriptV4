@@ -1,24 +1,13 @@
 class UserGroupsTempalte extends Template {
   constructor() {
     super();
+    this._allowedEmailDomainsOptions = ['allowed email domains', 'domains', 'allowed domains', 'allowed email domain'];
     this._foundFirstColumnAndCheckedForMissingValuesComment = 'Success: Checked first column for missing values';
-    this._foundUserGroupMembersColumnAndRemovedWhiteSpaceAndEmptyValuesOnMainSheetHeaderComment = "Removed whitespace and empty values from User Group Members Emails on main sheet";
-    this._foundUserGroupMembersColumnAndRemovedWhiteSpaceAndEmptyValuesComment = "Success: removed whitespace and empty values from Additional Contact Emails";
-    this._didNotFindUserGroupsMembersColumnButRanTheFunctionToRemoveWhiteSpaceAndEmptyValuesComment = "Success: removed whitespace and empty values from Additional Contact Emails, but did note find column";
-    this._invalidEmailsFoundHeaderComment = "Invalid Email/Emails found"; //duplicated
     this._invalidDomainNameComment = 'Invalid domain name/names found';
     this._invalidDomainNameFoundHeaderComment = 'Invalid domain name/names found';
-    this._foundUserGroupMembersColumnAndRanCheckForInvalidEmailsComment = "Success: ran check for invalid emails";
-    this._didNotFindUserGroupMembersColumnButRanCheckForInvalidEmailsComment = "Success: ran check for invalid emails, but did not find column";
     this._foundAllowedEmailDomainsColumnAndRanCheckForInvalidAllowedEmailDomainsComment = 'Success: ran check for invalid allowed email domains';
     this._didNotFindAllowedEmailDomainsColumnButRanCheckForInvalidAllowedEmailDomainsComment = 'Success: ran check for invalid allowed email domains, but did not find column';
-    this._foundAllowedEmailDomainsColumnAndRemovedWhiteSpaceAndEmptyValuesOnMainSheetHeaderComment = 'Removed whitespace and empty values from allowed email domains on main sheet';
-    this._foundALlowedEmailDomainsColumnAndRemovedWhiteSpaceAndEmptyValuesComment = 'Success: removed whitespace and empty values from allowed emails domains';
-    this._didNotFindAllowedEmailDomainsColumnButRanTheFunctionToRemoveWhiteSpaceAndEmptyValuesComment = 'Success: removed whitespace and empty values from allowed emails domains, but did not find column';
     this._failedFirstColumnMissingValuesCheckMessage = "Failed: check first column for missing values";
-    this._failedRemoveWhiteSpaceAndMissingValuesFromUserGroupMembersEmailsMessage = "Failed: did not remove whitespace and empty values from Additional Contact Emails";
-    this._failedRemoveWhiteSpaceAndMissingValuesFromAllowedEmailDomainsMessage = "Failed: did not remove whitespace and empty values from allowed email domains";
-    this._failedCheckNotRanForInvalidUserGroupMembersEmails = "Failed: check not ran for invalid additional contact emails";
     this._failedCheckNotRanForInvalidAllowedEmailDomains = 'Failed: check not ran for invalid allowed email domains';
   }
   checkFirstColumnForBlanks(reportSheetBinding) {
@@ -55,138 +44,6 @@ class UserGroupsTempalte extends Template {
   this._reportSummaryComments.push(this._foundFirstColumnAndCheckedForMissingValuesComment);
 
   }
-  formatUserGroupMemberEmails(reportSheetBinding) {
-    let headerRow = 1;
-    let emailColumnRange = this.getColumnRange('User Group Members (emails)', this._sheet);
-
-    if (emailColumnRange) {
-    let emailColumnValues = this.getValues(emailColumnRange);
-    let emailColumnPosition = emailColumnRange.getColumn();
-
-    emailColumnValues.forEach((emailString, index) => {
-      let row = index + 2;
-      let emailArray = String(emailString).split(",");
-
-
-        if (emailArray.length > 1) {
-          let emailArrayNew = emailArray.filter((val) => val.trim().length > 0).map((val) => val.trim()).join(", ");
-          let currentCell = this.getSheetCell(this._sheet, row, emailColumnPosition);
-          let reportSheetHeaderCell = this.getSheetCell(reportSheetBinding, headerRow, emailColumnPosition);
-          let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, emailColumnPosition);
-          let removedWhiteSpaceAndBlanksValue = emailArrayNew;
-          currentCell.setValue(removedWhiteSpaceAndBlanksValue);
-
-            this.insertHeaderComment(reportSheetHeaderCell, this._foundUserGroupMembersColumnAndRemovedWhiteSpaceAndEmptyValuesOnMainSheetHeaderComment);
-            this.setSheetCellBackground(reportSheetHeaderCell, this._lightRedHexCode);
-            this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
-        }
-
-        });
-
-        this._reportSummaryComments.push(this._foundUserGroupMembersColumnAndRemovedWhiteSpaceAndEmptyValuesComment);
-
-        } else {
-      this._reportSummaryComments.push(this._didNotFindUserGroupsMembersColumnButRanTheFunctionToRemoveWhiteSpaceAndEmptyValuesComment);
-    }
-    
-  }
-  checkForInvalidUserGroupMemberEmails(reportSheetBinding) {
-    let headerRow = 1;
-    let emailColumnRange = this.getColumnRange('User Group Members (emails)', this._sheet);
-
-    if (emailColumnRange) {
-      let emailColumnValues = this.getValues(emailColumnRange);
-      let emailColumnPosition = emailColumnRange.getColumn();
-
-    emailColumnValues.forEach((emailArray, index) => {
-      let row = index + 2;
-
-        if (typeof emailArray === 'string') {
-          let currentEmail = emailArray;
-          if (currentEmail !== "" && !this.validateEmail(currentEmail)) {
-            let currentCell = this.getSheetCell(this._sheet, row, emailColumnPosition);
-            let reportSheetCell = this.getSheetCell(reportSheetBinding, row, emailColumnPosition);
-            let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, emailColumnPosition);
-
-            //Line below for testing
-
-            // SpreadsheetApp.getUi().alert(`Invalid Email! ${currentEmail} ${reportSheetCell.getA1Notation()}`);
-            //testing line ends here
-            this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
-            this.setSheetCellBackground(currentCell, this._lightRedHexCode);
-            this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
-            this.insertCommentToSheetCell(reportSheetCell, this._invalidEmailComment);
-            this.insertHeaderComment(mainSheetHeaderCell, this._invalidEmailsFoundHeaderComment);
-            this.setErrorColumns(reportSheetBinding, row);
-          }
-
-        } else {
-            emailArray.forEach((emailRowArray) => {
-              emailRowArray.split(",").forEach(email => {
-                let currentEmail = email.trim();
-                if (currentEmail !== "" && !this.validateEmail(currentEmail)) {
-                let currentCell = this.getSheetCell(this._sheet, row, emailColumnPosition);
-                let reportSheetCell = this.getSheetCell(reportSheetBinding, row, emailColumnPosition);
-                let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, emailColumnPosition);
-
-                this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
-                this.setSheetCellBackground(currentCell, this._lightRedHexCode);
-                this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
-                this.insertCommentToSheetCell(reportSheetCell, this._invalidEmailComment);
-                this.insertHeaderComment(mainSheetHeaderCell, this._invalidEmailsFoundHeaderComment);
-                this.setErrorColumns(reportSheetBinding, row);
-                }
-              });
-          });
-
-        }
-
-        
-        }
-      );
-
-      this._reportSummaryComments.push(this._foundUserGroupMembersColumnAndRanCheckForInvalidEmailsComment);
-      
-    } else {
-      this._reportSummaryComments.push(this._didNotFindUserGroupMembersColumnButRanCheckForInvalidEmailsComment);
-    }
-    
-  }
-  formatAllowedEmailsDomainNames(reportSheetBinding) {
-    let headerRow = 1;
-    let allowedEmailDomainsColumnRange = this.getColumnRange('Allowed Email Domains', this._sheet);
-
-    if (allowedEmailDomainsColumnRange) {
-    let allowedEmailDomainsColumnValues = this.getValues(allowedEmailDomainsColumnRange);
-    let allowedEmailDomainsColumnPosition = allowedEmailDomainsColumnRange.getColumn();
-
-    allowedEmailDomainsColumnValues.forEach((domainString, index) => {
-      let row = index + 2;
-      let domainStringArray = String(domainString).split(",");
-
-
-        if (domainStringArray.length > 1) {
-          let domainStringArrayNew = domainStringArray.filter((val) => val.trim().length > 0).map((val) => val.trim()).join(", ");
-          let currentCell = this.getSheetCell(this._sheet, row, allowedEmailDomainsColumnPosition);
-          let reportSheetHeaderCell = this.getSheetCell(reportSheetBinding, headerRow, allowedEmailDomainsColumnPosition);
-          let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, allowedEmailDomainsColumnPosition);
-          let removedWhiteSpaceAndBlanksValue = domainStringArrayNew;
-          currentCell.setValue(removedWhiteSpaceAndBlanksValue);
-
-            this.insertHeaderComment(reportSheetHeaderCell, this._foundAllowedEmailDomainsColumnAndRemovedWhiteSpaceAndEmptyValuesOnMainSheetHeaderComment);
-            this.setSheetCellBackground(reportSheetHeaderCell, this._lightRedHexCode);
-            this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
-        }
-
-        });
-
-        this._reportSummaryComments.push(this._foundALlowedEmailDomainsColumnAndRemovedWhiteSpaceAndEmptyValuesComment);
-
-        } else {
-      this._reportSummaryComments.push(this._didNotFindAllowedEmailDomainsColumnButRanTheFunctionToRemoveWhiteSpaceAndEmptyValuesComment);
-    }
-    
-  }
   validateDomainName(domainName) {
     return String(domainName)
       .toLowerCase()
@@ -195,63 +52,66 @@ class UserGroupsTempalte extends Template {
   }
   checkForInvalidAllowedDomainNames(reportSheetBinding) {
     let headerRow = 1;
-    let domainNameColumnRange = this.getColumnRange('Allowed Email Domains', this._sheet);
+    this._allowedEmailDomainsOptions.forEach((headerTitle) => {
+      let domainNameColumnRange = this.getColumnRange(headerTitle, this._sheet);
+      if (domainNameColumnRange) {
+        let domainNameColumnValues = this.getValues(domainNameColumnRange);
+        let domainNameColumnPosition = domainNameColumnRange.getColumn();
 
-    if (domainNameColumnRange) {
-      let domainNameColumnValues = this.getValues(domainNameColumnRange);
-      let domainNameColumnPosition = domainNameColumnRange.getColumn();
+        domainNameColumnValues.forEach((domainNameArray, index) => {
+          let row = index + 2;
 
-    domainNameColumnValues.forEach((domainNameArray, index) => {
-      let row = index + 2;
-
-        if (typeof domainNameArray === 'string') {
-          let currentDomainName = domainNameArray;
-          if (currentDomainName !== "" && !this.validateDomainName(currentDomainName)) {
-            let currentCell = this.getSheetCell(this._sheet, row, domainNameColumnPosition);
-            let reportSheetCell = this.getSheetCell(reportSheetBinding, row, domainNameColumnPosition);
-            let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, domainNameColumnPosition);
-
-            //Line below for testing
-
-            // SpreadsheetApp.getUi().alert(`Invalid Email! ${currentEmail} ${reportSheetCell.getA1Notation()}`);
-            //testing line ends here
-            this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
-            this.setSheetCellBackground(currentCell, this._lightRedHexCode);
-            this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
-            this.insertCommentToSheetCell(reportSheetCell, this._invalidDomainNameComment);
-            this.insertHeaderComment(mainSheetHeaderCell, this._invalidDomainNameFoundHeaderComment);
-            this.setErrorColumns(reportSheetBinding, row);
-          }
-
-        } else {
-            domainNameArray.forEach((domainNameRowArray) => {
-              domainNameRowArray.split(",").forEach(domainName => {
-              let currentDomainName = domainName.trim();
-              if (currentDomainName !== "" && !this.validateDomainName(currentDomainName)) {
+          if (typeof domainNameArray === 'string') {
+            let currentDomainName = domainNameArray;
+            if (currentDomainName !== "" && !this.validateDomainName(currentDomainName)) {
               let currentCell = this.getSheetCell(this._sheet, row, domainNameColumnPosition);
               let reportSheetCell = this.getSheetCell(reportSheetBinding, row, domainNameColumnPosition);
               let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, domainNameColumnPosition);
 
+              //Line below for testing
+
+              // SpreadsheetApp.getUi().alert(`Invalid Email! ${currentEmail} ${reportSheetCell.getA1Notation()}`);
+              //testing line ends here
               this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
               this.setSheetCellBackground(currentCell, this._lightRedHexCode);
               this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
-              this.insertCommentToSheetCell(reportSheetCell,this._invalidDomainNameComment);
+              this.insertCommentToSheetCell(reportSheetCell, this._invalidDomainNameComment);
               this.insertHeaderComment(mainSheetHeaderCell, this._invalidDomainNameFoundHeaderComment);
               this.setErrorColumns(reportSheetBinding, row);
-              }
-            });
-           });
-          }
-        }
-      );
+            }
 
-      this._reportSummaryComments.push(this._foundAllowedEmailDomainsColumnAndRanCheckForInvalidAllowedEmailDomainsComment);
-      
-    } else {
-      this._reportSummaryComments.push(this._didNotFindAllowedEmailDomainsColumnButRanCheckForInvalidAllowedEmailDomainsComment);
-    }
+          } else {
+              domainNameArray.forEach((domainNameRowArray) => {
+                domainNameRowArray.split(",").forEach(domainName => {
+                let currentDomainName = domainName.trim();
+                if (currentDomainName !== "" && !this.validateDomainName(currentDomainName)) {
+                  let currentCell = this.getSheetCell(this._sheet, row, domainNameColumnPosition);
+                  let reportSheetCell = this.getSheetCell(reportSheetBinding, row, domainNameColumnPosition);
+                  let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, domainNameColumnPosition);
+
+                  this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
+                  this.setSheetCellBackground(currentCell, this._lightRedHexCode);
+                  this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
+                  this.insertCommentToSheetCell(reportSheetCell,this._invalidDomainNameComment);
+                  this.insertHeaderComment(mainSheetHeaderCell, this._invalidDomainNameFoundHeaderComment);
+                  this.setErrorColumns(reportSheetBinding, row);
+                }
+              });
+            });
+          }
+        });
+       }
+     });
+   this._reportSummaryComments.push(this._foundAllowedEmailDomainsColumnAndRanCheckForInvalidAllowedEmailDomainsComment);
     
   }
+  get failedFirstColumnMissingValuesCheckMessage() {
+    return this._failedFirstColumnMissingValuesCheckMessage = "Failed: check first column for missing values";
+  }
+  get failedCheckNotRanForInvalidAllowedEmailDomains() {
+    return this._failedCheckNotRanForInvalidAllowedEmailDomains = 'Failed: check not ran for invalid allowed email domains';
+  }
+    
 
 }
 
@@ -296,38 +156,31 @@ try {
       userGroupsTemplate.checkFirstColumnForBlanks(reportSheet);
         } catch(err) {
             Logger.log(err);
-            userGroupsTemplate.reportSummaryComments = userGroupsTemplate._failedFirstColumnMissingValuesCheckMessage;
+            userGroupsTemplate.reportSummaryComments = userGroupsTemplate.failedFirstColumnMissingValuesCheckMessage;
             throw new Error(`Check not ran for missing values within first column. Reason: ${err.name}: ${err.message}.  Please revert sheet to previous version, ensure the correct values are within the first four colums (i.e. "First Name, Last Name, and Email" is running a User Import Check [this would be for first three columns, but this checker is for four]), and try again. If this test does not work, record this error message, revert sheet to previous version, and contact developer to fix.`);
         }
 
     try {
-      userGroupsTemplate.formatUserGroupMemberEmails(reportSheet);
+      userGroupsTemplate.formatCommaSeparatedLists(reportSheet);
     } catch (err) {
         Logger.log(err);
-        userGroupsTemplate.reportSummaryComments = userGroupsTemplate._failedRemoveWhiteSpaceAndMissingValuesFromUserGroupMembersEmailsMessage;
-        throw new Error(`Did not remove whitespace and empty values from User Group members emails. Reason: ${err.name}: ${err.message} at line. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+        userGroupsTemplate.reportSummaryComments = programsAndAgenciesTemplate.failedRemoveWhiteSpaceAndMissingValuesFromCommaSeparatedListsMessage;
+        throw new Error(`Did not remove whitespace and empty values from comma-separated list(s). Reason: ${err.name}: ${err.message} at line. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
     }
 
     try {
-    userGroupsTemplate.checkForInvalidUserGroupMemberEmails(reportSheet);
+    userGroupsTemplate.checkForInvalidCommaSeparatedEmails(reportSheet);
     } catch(err) {
         Logger.log(err);
-        userGroupsTemplate.reportSummaryComments = userGroupsTemplate._failedCheckNotRanForInvalidUserGroupMembersEmails;
+        userGroupsTemplate.reportSummaryComments = userGroupsTemplate.failedCheckNotRanForInvalidCommaSeparatedEmail;
         throw new Error(`Check not ran for invalid User Group Members emails. Reason: ${err.name}: ${err.message} at line. Please revert sheet to previous version, ensure the user group members column is titled "User Group Members (emails)" within its header column, and try again. If this test does not work, record this error message, revert sheet to previous version, and contact developer to fix.`);
       } 
-      try {
-      userGroupsTemplate.formatAllowedEmailsDomainNames(reportSheet);
-    } catch (err) {
-        Logger.log(err);
-        userGroupsTemplate.reportSummaryComments = userGroupsTemplate._failedRemoveWhiteSpaceAndMissingValuesFromAllowedEmailDomainsMessage;
-        throw new Error(`Did not remove whitespace and empty values from User Group members emails. Reason: ${err.name}: ${err.message} at line. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
-    }
 
     try {
   userGroupsTemplate.checkForInvalidAllowedDomainNames(reportSheet);
   } catch(err) {
       Logger.log(err);
-      userGroupsTemplate.reportSummaryComments = userGroupsTemplate._failedCheckNotRanForInvalidAllowedEmailDomains;
+      userGroupsTemplate.reportSummaryComments = userGroupsTemplate.failedCheckNotRanForInvalidAllowedEmailDomains;
       throw new Error(`Check not ran for invalid allowed domain names. Reason: ${err.name}: ${err.message} at line. Please revert sheet to previous version, ensure the allowed domain names column is titled "Allowed Email Domains" within its header column, and try again. If this test does not work, record this error message, revert sheet to previous version, and contact developer to fix.`);
     }
 

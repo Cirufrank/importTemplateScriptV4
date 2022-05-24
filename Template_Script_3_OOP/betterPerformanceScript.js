@@ -26,6 +26,7 @@ Goals met:
  Now does relies on column position for checking missing names and emails and such (checks for missing values in first three columns)
  Clears formatting of values at beggining of import
  Checks for invalid states and test for Canada states and postal codes
+ hyphens allowed in emails, but not in domain name validation
 
  ToDos: 
  
@@ -115,6 +116,12 @@ class Template {
     this._valuesMissingComment = 'Values Missing';
     this._invalidEmailComment = 'Invalid Email Format';
     this._invalidEmailCellMessage = "Invalid Email/Emails Found";
+    this._formattedDateReportMessage = 'Formatted date column(s) found';
+    this._foundCommaSeparatedListColumnAndRemovedWhiteSpaceAndEmptyValuesComment = "Success: removed whitespace and empty values from comma-separated list column(s)";
+    this._foundCommaSeparatedListColumnAndRemovedWhiteSpaceAndEmptyValuesOnMainSheetHeaderComment = "Removed whitespace and empty values from comma-separated list(s) on main sheet";
+    this._foundCommaSeparatedEmailsColumnAndRanCheckForInvalidEmailsComment = "Success: ran check for invalid emails within comma-separated list";
+    this._failedCheckNotRanForInvalidCommaSeparatedEmails = "Failed: check not ran for invalid emails within comma-separated list";
+    this._failedFormatDateColumns = 'Failed: check not ran for dates to format'
     this._failedRemovedWhiteSpaceFromCellsComment = "Failed: remove white space from cells";
     this._failedRemovedFormattingFromCellsComment = "Failed: remove formatting from cells";
     this._failedInvalidEmailCheckMessage = "Failed: check not ran for invalid emails";
@@ -124,7 +131,7 @@ class Template {
     this._failedFormatUserDateAddedAndBirthdayColumns = "Failed: did not format user date added and birthday columns";
     this._failedCheckNotRanForInvalidGenderOptions = "Failed: check not ran for invalid gender options";
     this._failedCheckNotRanForInvalidPostalCodes = "Failed: check not ran for invalid postal codes";
-    this._failedCheckNotRanForInvalidHomeOrMobilePhoneNumbers = "Failed: check not ran for invalid home or mobile phone numbers";
+    this._failedRemoveWhiteSpaceAndMissingValuesFromCommaSeparatedListsMessage = "Failed: did not remove whitespace and empty values from comma-separated lists";
     this._dateFormat = 'yyyy-mm-dd';
     this._lightGreenHexCode = '#b6d7a8';
     this._lightRedHexCode = '#f4cccc';
@@ -133,7 +140,12 @@ class Template {
     
     this._data = this._sheet.getDataRange();
     this._values = this._data.getValues();
-    this._columnHeaders = this._values[0].map(header => header.trim());
+    this._columnHeaders = this._values[0].map(header => header.toLowerCase().trim());
+    this._emailColumnHeaderOptions = ['email','email address','user email','emails','email addresses', 'program manager email','program manager email address', 'agency manager email','agency manager email address', 'contact email'];
+    this._dateHeaderOptions = ['birthday (yyyy-mm-dd)', 'birthday', 'birth date', 'dob','d.o.b.', 'date of birth','need date', 'date', 'date served', 'date served  (yyyy-mm-dd)', 'date added', 'date added (yyyy-mm-dd)', 'user date added'];
+    this._mutipleEmailsHeaderOptions = ['need contact emails', 'additional contacts (emails)', 'additional contants', 'user group members (emails)', 'user group members', 'group members', 'leaders', 'user group leaders (emails)' , 'user group leaders', 'group leaders', 'user group leader', 'opportunity contact emails'];
+    this._genderOptionsHeaderOptions = ['gender (male, female, other, prefer not to say)', 'gender', 'sex'];
+    this._commaSeparatedListCleanupHeaderOptions = ['tags (comma separated)', 'interests (comma seperated)', 'tags', 'interests', 'additional contacts (emails)', 'need contact emails', 'user group members (emails)', 'user group members', 'group members', 'leaders', 'user group leaders (emails)' , 'user group leaders', 'group leaders', 'user group leader', 'allowed email domains', 'domains', 'allowed domains', 'allowed email domain', 'email domains'];
     this._reportSummaryColumnPosition = this._columnHeaders.length + 1;
     this._reportSummaryComments = [];
     
@@ -219,8 +231,17 @@ class Template {
   get failedCheckNotRanForInvalidPostalCodes() {
     return this._failedCheckNotRanForInvalidPostalCodes;
   }
-  get failedCheckNotRanForInvalidHomeOrMobilePhoneNumbers() {
-    return this._failedCheckNotRanForInvalidHomeOrMobilePhoneNumbers;
+  get failedRemoveWhiteSpaceAndMissingValuesFromCommaSeparatedListsMessage() {
+    return this._failedRemoveWhiteSpaceAndMissingValuesFromCommaSeparatedListsMessage;
+  }
+  get() {
+    this._failedComma
+  }
+  get formattedDateReportMessage() {
+    return this._formattedDateReportMessage;
+  }
+  get failedCheckNotRanForInvalidCommaSeparatedEmails() {
+    return this._failedCheckNotRanForInvalidCommaSeparatedEmails;
   }
   set reportSummaryComments(comments) {
     this._reportSummaryComments.push(comments);
@@ -253,13 +274,16 @@ class Template {
     return sheetCell.getComment() ? true: false;
   }
   insertCommentToSheetCell(sheetCell, comment) {
-    if (this.checkCellForComment(sheetCell)) {
+    let currentComments = sheetCell.getComment().split(",").filter((val) => val.trim());
+    if (!currentComments.includes(comment)) {
+      if (this.checkCellForComment(sheetCell)) {
       let previousComment = sheetCell.getComment();
       let newComment = `${previousComment}, ${comment}`;
       sheetCell.setComment(newComment);
     } else {
       sheetCell.setComment(comment);
     }
+   }
   }
   deleteSheetIfExists(sheetBinding) {
     if (sheetBinding !== null) {
@@ -285,8 +309,9 @@ class Template {
     return range.getValues();
   }
   insertHeaderComment(headerCell, commentToInsert) {
-    if (!headerCell.getComment().match(commentToInsert)) {
-      if (!headerCell.getComment().match(",")) {
+    let currentComments = headerCell.getComment().split(",").filter((val) => val.trim());
+    if (!currentComments.includes(commentToInsert)) {
+      if (!this.checkCellForComment(headerCell)) {
         this.insertCommentToSheetCell(headerCell, commentToInsert);
       } else {
         this.insertCommentToSheetCell(headerCell, `, ${commentToInsert}`);
@@ -373,58 +398,176 @@ class Template {
 
  checkForInvalidEmails(reportSheetBinding) {
     let headerRow = 1;
-    let emailColumnRange = this.getColumnRange('Email', this._sheet, this._columnHeaders);
-    let emailColumnValues = this.getValues(emailColumnRange);
-    let emailColumnPosition = emailColumnRange.getColumn();
 
-    emailColumnValues.forEach((email, index) => {
-      let currentEmail = String(email);
-      let row = index + 2;
+    this._emailColumnHeaderOptions.forEach((headerTitle) => {
+      let emailColumnRange = this.getColumnRange(headerTitle, this._sheet);
+      if (emailColumnRange) {
+        let emailColumnValues = this.getValues(emailColumnRange);
+        let emailColumnPosition = emailColumnRange.getColumn();
 
-        if (currentEmail !== "" && !this.validateEmail(currentEmail)) {
-          let currentCell = this.getSheetCell(this._sheet, row, emailColumnPosition);
-          let reportSheetCell = this.getSheetCell(reportSheetBinding, row, emailColumnPosition);
-          let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, emailColumnPosition);
-          this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
-          this.setSheetCellBackground(currentCell, this._lightRedHexCode);
-          this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
-          this.insertCommentToSheetCell(reportSheetCell, this._invalidEmailComment);
-          this.insertHeaderComment(mainSheetHeaderCell, this._invalidEmailCellMessage);
-          this.setErrorColumns(reportSheetBinding, row);
-          }
-        }
-      );
+        emailColumnValues.forEach((email, index) => {
+          let currentEmail = String(email);
+          let row = index + 2;
 
+            if (currentEmail !== "" && !this.validateEmail(currentEmail)) {
+              let currentCell = this.getSheetCell(this._sheet, row, emailColumnPosition);
+              let reportSheetCell = this.getSheetCell(reportSheetBinding, row, emailColumnPosition);
+              let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, emailColumnPosition);
+              this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
+              this.setSheetCellBackground(currentCell, this._lightRedHexCode);
+              this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
+              this.insertCommentToSheetCell(reportSheetCell, this._invalidEmailComment);
+              this.insertHeaderComment(mainSheetHeaderCell, this._invalidEmailCellMessage);
+              this.setErrorColumns(reportSheetBinding, row);
+              }
+            }
+          );
+         }
+        });    
+    
       this._reportSummaryComments.push(this._ranEmailValidationCheckSuccessMessage);
   }
+  formatAllDatedColumns(reportSheetBinding) {
+  let row = 1;
+
+  this._dateHeaderOptions.forEach((headerTitle) => {
+    let currentDatedColumn = this.getColumnRange(headerTitle, this._sheet);
+
+    if(currentDatedColumn) {
+      let currentDatedColumnPosition = currentDatedColumn.getColumn();
+      let reportSheetcurrentDatedColumnHeaderCell = this.getSheetCell(reportSheetBinding, row, currentDatedColumnPosition);
+
+      this.setColumnToYYYYMMDDFormat(currentDatedColumn);
+      this.setSheetCellBackground(reportSheetcurrentDatedColumnHeaderCell, this._lightRedHexCode);
+      this.insertCommentToSheetCell(reportSheetcurrentDatedColumnHeaderCell, this._dateFormattedComment);;
+      this._reportSummaryComments.push(this._formattedDateReportMessage);
+    }
+  });
+ }
+ formatCommaSeparatedLists(reportSheetBinding) {
+    let headerRow = 1;
+    this._commaSeparatedListCleanupHeaderOptions.forEach((headerTitle) => {
+      let currentColumnRange = this.getColumnRange(headerTitle, this._sheet);
+
+      if (currentColumnRange) {
+      let currentColumnValues = this.getValues(currentColumnRange);
+      let currentColumnPosition = currentColumnRange.getColumn();
+
+      currentColumnValues.forEach((valueString, index) => {
+        let row = index + 2;
+        let valueStringArray = String(valueString).split(",");
+
+
+          if (valueStringArray.length > 1) {
+            let valueStringNew = valueStringArray.filter((val) => val.trim().length > 0).map((val) => val.trim()).join(", ");
+            if (valueString !== valueStringNew) {
+              let currentCell = this.getSheetCell(this._sheet, row, currentColumnPosition);
+              let reportSheetHeaderCell = this.getSheetCell(reportSheetBinding, headerRow, currentColumnPosition);
+              let removedWhiteSpaceAndBlanksValue = valueStringNew;
+              currentCell.setValue(removedWhiteSpaceAndBlanksValue);
+
+                this.insertHeaderComment(reportSheetHeaderCell, this._foundCommaSeparatedListColumnAndRemovedWhiteSpaceAndEmptyValuesOnMainSheetHeaderComment);
+                this.setSheetCellBackground(reportSheetHeaderCell, this._lightRedHexCode);
+              }
+            }
+            
+        });
+
+       
+
+      } 
+    });
+    
+     this._reportSummaryComments.push(this._foundCommaSeparatedListColumnAndRemovedWhiteSpaceAndEmptyValuesComment);
+  }
+  checkForInvalidCommaSeparatedEmails(reportSheetBinding) {
+    let headerRow = 1;
+    this._mutipleEmailsHeaderOptions.forEach((headerTitle) => {
+      let emailColumnRange = this.getColumnRange(headerTitle, this._sheet);
+      if (emailColumnRange) {
+        let emailColumnValues = this.getValues(emailColumnRange);
+        let emailColumnPosition = emailColumnRange.getColumn();
+
+        emailColumnValues.forEach((emailArray, index) => {
+          let row = index + 2;
+
+          if (typeof emailArray === 'string') {
+            let currentEmail = emailArray;
+            if (currentEmail !== "" && !this.validateEmail(currentEmail)) {
+              let currentCell = this.getSheetCell(this._sheet, row, emailColumnPosition);
+              let reportSheetCell = this.getSheetCell(reportSheetBinding, row, emailColumnPosition);
+              let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, emailColumnPosition);
+
+              //Line below for testing
+
+              // SpreadsheetApp.getUi().alert(`Invalid Email! ${currentEmail} ${reportSheetCell.getA1Notation()}`);
+              //testing line ends here
+              this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
+              this.setSheetCellBackground(currentCell, this._lightRedHexCode);
+              this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
+              this.insertCommentToSheetCell(reportSheetCell, this._invalidEmailCellMessag);
+              this.insertHeaderComment(mainSheetHeaderCell, this._invalidEmailCellMessag);
+              this.setErrorColumns(reportSheetBinding, row);
+            }
+          } else {
+            //email array holds all of the rows' email values
+              emailArray.forEach(emailRowArray => {
+                //This creates and array of emails within the current row and each email is validated
+                emailRowArray.split(",").forEach((email) => {
+                  let currentEmail = email.trim();
+                  if (currentEmail !== "" && !this.validateEmail(currentEmail)) {
+                  let currentCell = this.getSheetCell(this._sheet, row, emailColumnPosition);
+                  let reportSheetCell = this.getSheetCell(reportSheetBinding, row, emailColumnPosition);
+                  let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, emailColumnPosition);
+
+                  this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
+                  this.setSheetCellBackground(currentCell, this._lightRedHexCode);
+                  this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
+                  this.insertCommentToSheetCell(reportSheetCell, this._invalidEmailCellMessage);
+                  this.insertHeaderComment(mainSheetHeaderCell, this._invalidEmailCellMessage);
+                  this.setErrorColumns(reportSheetBinding, row);
+                  }
+                });
+            });
+          }
+        });
+      }
+    });
+        
+    this._reportSummaryComments.push(this._foundCommaSeparatedEmailsColumnAndRanCheckForInvalidEmailsComment);   
+  } 
 
 }
 
 class UsersNeedsAndAgenciesTemplate extends Template {
   constructor() {
     super();
+    this._stateHeaderOptions = ['state','state (ex: nh)', 'state (e.g. tn)','need state'];
+    this._phoneHeaderOptions = ['phone number', 'phone','mobile', 'cell phone', 'cell phone numbers','number','user phone','user phone number','home phone number','mobile phone number', 'mobile phone', 'cell phone number', 'mobile phone numbers', 'user phone numbers'];
+    this._zipHeaderOptions = ['zipcode', 'zip code', 'postal','postal code', 'zip', 'zip codes', 'postal codes', 'user zip', 'user zip codes', 'user postal codes', 'user postal code', 'need zip', 'opportunity zip', 'opportunity zip code', 'need zip code', 'need postal code', 'opportunity postal code'];
+    this._generalURLColumnOptions = ['website url', 'main site', 'webpage'];
+    this._facebookLinkColumnOptions = ['facebook link', 'facebook', 'facebook page', 'fb', 'fb page', 'fb link', 'face book', 'face book page'];
+    this._linkedInColumnOptions = ['linkedin link', 'linked in link', 'linked in', 'linkedin'];
+    this._instagramColumnOptions = ['instagram link', 'instagram page', 'instagram'];
+    this._youTubeColumnoptions = ['agency video (youtube or vimeo url)', 'youtube', 'youtube link'];
     this._stateTwoLetterCodeComment = 'State converted to two letter code'; 
     this._invalidPostalCodeComment = 'Invalid postal code'; 
     this._invalidPhoneNumberComment = 'Invalid phone number'; 
     this._invalidStateComment = 'Invalid State'; 
     this._invalidStateFoundHeaderComment = "Invalid State/States found";
-    this._invalidHomePhoneNumbersFoundHeaderComment =  "Invalid Home Phone Number/Numbers Found";
-    this._invalidCellPhoneNumbersFoundHeaderComment = "Invalid Cell Phone Number/Numbers Found";
+    this._invalidPhoneNumbersFoundHeaderComment =  "Invalid Phone Number/Numbers Found";
     this._invalidPostalCodeFoundHeaderComment = "Invalid Postal Code/Codes Found";
     this._stateColumnFoundAndConversionFunctionRanComment = "Success: ran check to convert states to two-digit format";
     this._stateColumnNotFoundAndConversionRanComment = "Success: ran check to convert states to two-digit format, but did not find column";
     this._stateColumnFoundAndValidationCheckRanComment = "Success: ran check for invalid states";
     this._stateColumnNotFoundAndValidationCheckRanComment = "Success: ran check for invalid states, but did not find column";
-    this._homePhoneNumberColumnFoundAndValidationCheckRanComment = "Success: ran check for invalid home phone numbers";
-    this._homePhoneNumberColumnNotFoundAndValidationCheckRanComment = "Success: ran check for invalid home phone numbers, but did not find column";
-    this._mobilePhoneNumberColumnFoundAndValidationCheckRanComment = "Success: ran check for invalid mobile phone numbers";
-    this._mobilePhoneNumberColumnNotFoundAndValidationCheckRanComment = "Success: ran check for invalid mobile phone numbers, but did not find column";
+    this._phoneNumberColumnFoundAndValidationCheckRanComment = "Success: ran check for invalid phone numbers";
     this._postalCodeColumnFoundAndValidationCheckRan = "Success: ran check for invalid postal codes";
     this._postalCodeColumnNotFoundAndValidationCheckRan = "Success: ran check for invalid postal codes, but did not find column";
     this._failedCheckNotRanForConvertingStatesToTwoLetterCodes = "Failed: check not ran for converting states to two-letter code";
     this._failedInvalidStatesCheckMessage = "Failed: check not ran for invalid states";
     this._failedInvalidPostalCodeCheck = "Failed: check not ran for invalid postal codes";
-    this._failedInvalidHomeAndMobilePhoneNumbersCheck = "Failed: check not ran for invalid home or mobile phone numbers";
+    this._failedInvalidPhoneNumbersCheck = "Failed: check not ran for invalid phone numbers";
     this._usStateToAbbreviation = {
       "Alabama": "AL",
       "Alaska": "AK",
@@ -496,82 +639,72 @@ class UsersNeedsAndAgenciesTemplate extends Template {
   get failedInvalidPostalCodeCheck() {
     return this._failedInvalidPostalCodeCheck;
   }
-  get failedInvalidHomeAndMobilePhoneNumbersCheck() {
-    return this._failedInvalidHomeAndMobilePhoneNumbersCheck;
+  get failedInvalidPhoneNumbersCheckk() {
+    return this._failedInvalidPhoneNumbersCheck;
   }
   convertStatesToTwoLetterCode(reportSheetBinding) {
-    let stateColumnRange = this.getColumnRange('State', this._sheet);
+    this._stateHeaderOptions.forEach((headerTitle) => {
+      let stateColumnRange = this.getColumnRange(headerTitle, this._sheet);
+      if (stateColumnRange) {
+        let stateColumnRangeValues = this.getValues(stateColumnRange).map(val => {
+          let currentState = String(val);
+          if (currentState.length > 2) {
+            return (currentState[0].toUpperCase() + currentState.substr(1).toLowerCase());
+          } else {
+            return currentState;
+          }
+        });
 
-    if (stateColumnRange) {
-      let stateColumnRangeValues = this.getValues(stateColumnRange).map(val => {
-      let currentState = String(val);
-      if (currentState.length > 2) {
-        return (currentState[0].toUpperCase() + currentState.substr(1).toLowerCase());
-      } else {
-        return currentState;
-      }
-    });
-
-     let stateColumnRangePosition = stateColumnRange.getColumn();
-    
-      stateColumnRangeValues.forEach((val, index) => {
-        let currentState = String(val);
-        let row = index + 2;
-        let currentCell = this.getSheetCell(this._sheet, row, stateColumnRangePosition);
-        let currentReportCell = this.getSheetCell(reportSheetBinding, row, stateColumnRangePosition);
-        if (currentState.length > 2 && this._usFullStateNames.includes(currentState)) {
-          currentCell.setValue(this._usStateToAbbreviation[currentState]);
-          this.setSheetCellBackground(currentReportCell, this._lightRedHexCode);
-          this.insertCommentToSheetCell(currentReportCell, this._stateTwoLetterCodeComment);
-
-        }
-    });
-
-    this._reportSummaryComments.push(this._stateColumnFoundAndConversionFunctionRanComment);
-
-
-    } else {
-      this._reportSummaryComments.push(this._stateColumnNotFoundAndConversionRanComment);
-
-    }
-    
-
-  }
-  validateStates(reportSheetBinding) {
-    let stateColumnRange = this.getColumnRange('State', this._sheet);
-
-    if (stateColumnRange) {
-      let stateColumnRangeValues = this.getValues(stateColumnRange);
-
-      let stateColumnRangePosition = stateColumnRange.getColumn();
+        let stateColumnRangePosition = stateColumnRange.getColumn();
       
-      stateColumnRangeValues.forEach((val, index) => {
-        let currentState = String(val);
-        
-        if (!this._usStateAbbreviations.includes(currentState) && currentState.length !== 0) {
-          let headerRow = 1;
+        stateColumnRangeValues.forEach((val, index) => {
+          let currentState = String(val);
           let row = index + 2;
           let currentCell = this.getSheetCell(this._sheet, row, stateColumnRangePosition);
           let currentReportCell = this.getSheetCell(reportSheetBinding, row, stateColumnRangePosition);
-          let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, stateColumnRangePosition);
-          this.setSheetCellBackground(currentCell, this._lightRedHexCode);
-          this.setSheetCellBackground(currentReportCell, this._lightRedHexCode);
-          this.insertCommentToSheetCell(currentReportCell, this._invalidStateComment);
-          this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
-          this.insertHeaderComment(mainSheetHeaderCell, this._invalidStateFoundHeaderComment);
-          this.setErrorColumns(reportSheetBinding,row);
-        }
-    });
+          if (currentState.length > 2 && this._usFullStateNames.includes(currentState)) {
+            currentCell.setValue(this._usStateToAbbreviation[currentState]);
+            this.setSheetCellBackground(currentReportCell, this._lightRedHexCode);
+            this.insertCommentToSheetCell(currentReportCell, this._stateTwoLetterCodeComment);
 
-    this._reportSummaryComments.push(this._stateColumnFoundAndValidationCheckRanComment);
+          }
+        });
 
-
-    } else {
-      this._reportSummaryComments.push(this._stateColumnNotFoundAndValidationCheckRanComment);
+    this._reportSummaryComments.push(this._stateColumnFoundAndConversionFunctionRanComment);
 
     }
+   }); 
     
+  }
+  validateStates(reportSheetBinding) {
+    this._stateHeaderOptions.forEach((headerTitle) => {
+      let stateColumnRange = this.getColumnRange(headerTitle, this._sheet);
+      if (stateColumnRange) {
+        let stateColumnRangeValues = this.getValues(stateColumnRange);
 
+        let stateColumnRangePosition = stateColumnRange.getColumn();
+        
+        stateColumnRangeValues.forEach((val, index) => {
+          let currentState = String(val);
+          
+          if (!this._usStateAbbreviations.includes(currentState) && currentState.length !== 0) {
+            let headerRow = 1;
+            let row = index + 2;
+            let currentCell = this.getSheetCell(this._sheet, row, stateColumnRangePosition);
+            let currentReportCell = this.getSheetCell(reportSheetBinding, row, stateColumnRangePosition);
+            let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, stateColumnRangePosition);
+            this.setSheetCellBackground(currentCell, this._lightRedHexCode);
+            this.setSheetCellBackground(currentReportCell, this._lightRedHexCode);
+            this.insertCommentToSheetCell(currentReportCell, this._invalidStateComment);
+            this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
+            this.insertHeaderComment(mainSheetHeaderCell, this._invalidStateFoundHeaderComment);
+            this.setErrorColumns(reportSheetBinding,row);
+          }
+        });
+
+       this._reportSummaryComments.push(this._stateColumnFoundAndValidationCheckRanComment);
+      }
+    });
   }
   validatePhoneNumbers(number) { 
     return String(number)
@@ -584,105 +717,132 @@ class UsersNeedsAndAgenciesTemplate extends Template {
   validatePostalCode(postalCode) { 
     return /(^\d{5}$)|(^\d{5}-\d{4}$)/.test(postalCode);
   }
-  checkForInvalidNumbers(reportSheetBinding) {
+  validateGeneralURL(url) {
+    return String(url)
+    .toLowerCase()
+    .match(
+      /^(?:(?:https?|http):\/\/)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:\/\S*)?$/
+    );
+  }
+  validateTwitterLink(twitterLink) {
+    return String(twitterLink)
+      .toLowerCase()
+      .match(
+        /https:\/\/[www.]*twitter.com\/.+/
+      );
+  }
+  validateInstagramLink(instagramLink) {
+    return String(instagramLink)
+      .toLowerCase()
+      .match(
+        /https:\/\/[www.]*instagram.com\/.+/
+      );
+  }
+  validateYouTubeLink(youTubeLink) {
+    return String(youTubeLink)
+      .toLowerCase()
+      .match(
+        /https:\/\/[www.]*youtube.com\/.+/
+      );
+  }
+  validateLinkedInLink(linkedInLink) {
+    return String(linkedInLink)
+      .toLowerCase()
+      .match(
+        /https:\/\/[www.]*linkedin.com\/.+/
+      );
+  }
+  checkForInvalidGeneralURL(reportSheetBinding) {
     let headerRow = 1;
-    let homePhoneNumberRange = this.getColumnRange('Phone', this._sheet);
-    let cellPhoneNumberRange = this.getColumnRange('Mobile', this._sheet);
+    this._phoneHeaderOptions.forEach((headerTitle) => {
+      let phoneNumberRange = this.getColumnRange(headerTitle, this._sheet);
+      if (phoneNumberRange) {
+      let phoneNumberRangeValues = this.getValues(phoneNumberRange);
+      let phoneNumberRangePosition = phoneNumberRange.getColumn();
+      let mainSheetPhoneHeaderCell = this.getSheetCell(this._sheet, headerRow, phoneNumberRangePosition);
 
-    if (homePhoneNumberRange) {
-      let homePhoneNumberRangeValues = this.getValues(homePhoneNumberRange);
-      let homePhoneNumberRangePosition = homePhoneNumberRange.getColumn();
-      let mainSheetHomePhoneHeaderCell = this.getSheetCell(this._sheet, headerRow, homePhoneNumberRangePosition);
-
-      homePhoneNumberRangeValues.forEach((number, index) => {
+      phoneNumberRangeValues.forEach((number, index) => {
 
         let currentNumber= String(number);
         let row = index + 2;
 
         if (currentNumber !== "" && !this.validatePhoneNumbers(currentNumber)) {
-          let currentCell = this.getSheetCell(this._sheet, row, homePhoneNumberRangePosition);
-          let reportSheetCell = this.getSheetCell(reportSheetBinding, row, homePhoneNumberRangePosition);
+          let currentCell = this.getSheetCell(this._sheet, row, phoneNumberRangePosition);
+          let reportSheetCell = this.getSheetCell(reportSheetBinding, row, phoneNumberRangePosition);
 
           this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
           this.setSheetCellBackground(currentCell, this._lightRedHexCode);
-          this.setSheetCellBackground(mainSheetHomePhoneHeaderCell, this._lightRedHexCode);
+          this.setSheetCellBackground(mainSheetPhoneHeaderCell, this._lightRedHexCode);
           this.insertCommentToSheetCell(reportSheetCell, this._invalidPhoneNumberComment);
-          this.insertHeaderComment(mainSheetHomePhoneHeaderCell,this._invalidHomePhoneNumbersFoundHeaderComment);
+          this.insertHeaderComment(mainSheetPhoneHeaderCell,this._invalidPhoneNumbersFoundHeaderComment);
           this.setErrorColumns(reportSheetBinding, row);
           }
-        }
-        
-      );
+        });
+      }
+    });
 
-      this._reportSummaryComments.push(this._homePhoneNumberColumnFoundAndValidationCheckRanComment);
+    this._reportSummaryComments.push(this._phoneNumberColumnFoundAndValidationCheckRanComment);
+  }
 
-    } else {
-      this._reportSummaryComments.push(this._homePhoneNumberColumnNotFoundAndValidationCheckRanComment);
-    }
+  checkForInvalidNumbers(reportSheetBinding) {
+    let headerRow = 1;
+    this._phoneHeaderOptions.forEach((headerTitle) => {
+      let phoneNumberRange = this.getColumnRange(headerTitle, this._sheet);
+      if (phoneNumberRange) {
+      let phoneNumberRangeValues = this.getValues(phoneNumberRange);
+      let phoneNumberRangePosition = phoneNumberRange.getColumn();
+      let mainSheetPhoneHeaderCell = this.getSheetCell(this._sheet, headerRow, phoneNumberRangePosition);
 
-    if (cellPhoneNumberRange) {
-      let cellPhoneNumberRangeValues = this.getValues(cellPhoneNumberRange);
-      let cellPhoneNumberRangePosition = cellPhoneNumberRange.getColumn();
-      let mainSheetCellPhoneHeaderCell = this.getSheetCell(this._sheet, headerRow, cellPhoneNumberRangePosition);
+      phoneNumberRangeValues.forEach((number, index) => {
 
-      cellPhoneNumberRangeValues.forEach((number, index) => {
-
-      let currentNumber= String(number);
-      let row = index + 2;
+        let currentNumber= String(number);
+        let row = index + 2;
 
         if (currentNumber !== "" && !this.validatePhoneNumbers(currentNumber)) {
-          let currentCell = this.getSheetCell(this._sheet, row, cellPhoneNumberRangePosition);
-          let reportSheetCell = this.getSheetCell(reportSheetBinding, row, cellPhoneNumberRangePosition);
+          let currentCell = this.getSheetCell(this._sheet, row, phoneNumberRangePosition);
+          let reportSheetCell = this.getSheetCell(reportSheetBinding, row, phoneNumberRangePosition);
 
           this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
           this.setSheetCellBackground(currentCell, this._lightRedHexCode);
-          this.setSheetCellBackground(mainSheetCellPhoneHeaderCell, this._lightRedHexCode);
+          this.setSheetCellBackground(mainSheetPhoneHeaderCell, this._lightRedHexCode);
           this.insertCommentToSheetCell(reportSheetCell, this._invalidPhoneNumberComment);
-          this.insertHeaderComment(mainSheetCellPhoneHeaderCell, this._invalidCellPhoneNumbersFoundHeaderComment);
+          this.insertHeaderComment(mainSheetPhoneHeaderCell,this._invalidPhoneNumbersFoundHeaderComment);
           this.setErrorColumns(reportSheetBinding, row);
           }
-        }
-      );
+        });
+      }
+    });
 
-      this._reportSummaryComments.push(this._mobilePhoneNumberColumnFoundAndValidationCheckRanComment);
-
-    } else {
-      this._reportSummaryComments.push(this._mobilePhoneNumberColumnNotFoundAndValidationCheckRanComment);
-    }
-
+    this._reportSummaryComments.push(this._phoneNumberColumnFoundAndValidationCheckRanComment);
   }
   checkForInvalidPostalCodes(reportSheetBinding) {
     let headerRow = 1;
-    let postalCodeColumnRange = this.getColumnRange('Zip', this._sheet);
+    this._zipHeaderOptions.forEach((headerTitle) => {
+      let postalCodeColumnRange = this.getColumnRange(headerTitle, this._sheet);
+      if (postalCodeColumnRange) {
+        let postalCodeColumnRangeValues = this.getValues(postalCodeColumnRange);
+        let postalCodeColumnRangePosition = postalCodeColumnRange.getColumn();
+        let mainSheetPostalHeaderCell = this.getSheetCell(this._sheet, headerRow, postalCodeColumnRangePosition);
 
-    if (postalCodeColumnRange) {
-      let postalCodeColumnRangeValues = this.getValues(postalCodeColumnRange);
-      let postalCodeColumnRangePosition = postalCodeColumnRange.getColumn();
-      let mainSheetPostalHeaderCell = this.getSheetCell(this._sheet, headerRow, postalCodeColumnRangePosition);
+        postalCodeColumnRangeValues.forEach((code, index) => {
+          let currentCode = String(code);
+          let row = index + 2;
 
-      postalCodeColumnRangeValues.forEach((code, index) => {
-        let currentCode = String(code);
-        let row = index + 2;
-
-        if (currentCode !== "" && !this.validatePostalCode(currentCode)) {
-          let currentCell = this.getSheetCell(this._sheet, row, postalCodeColumnRangePosition);
-          let reportSheetCell = this.getSheetCell(reportSheetBinding, row, postalCodeColumnRangePosition);
-          this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
-          this.setSheetCellBackground(currentCell, this._lightRedHexCode);
-          this.setSheetCellBackground(mainSheetPostalHeaderCell, this._lightRedHexCode);
-          this.insertCommentToSheetCell(reportSheetCell, this._invalidPostalCodeComment);
-          this.insertHeaderComment(mainSheetPostalHeaderCell, this._invalidPostalCodeFoundHeaderComment);
-          this.setErrorColumns(reportSheetBinding, row);
-          }
-        }
-      );
-
-      this._reportSummaryComments.push(this._postalCodeColumnFoundAndValidationCheckRan);
-    } else {
-      this._reportSummaryComments.push(this._postalCodeColumnNotFoundAndValidationCheckRan);
-    }
-    
-  }
+          if (currentCode !== "" && !this.validatePostalCode(currentCode)) {
+            let currentCell = this.getSheetCell(this._sheet, row, postalCodeColumnRangePosition);
+            let reportSheetCell = this.getSheetCell(reportSheetBinding, row, postalCodeColumnRangePosition);
+            this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
+            this.setSheetCellBackground(currentCell, this._lightRedHexCode);
+            this.setSheetCellBackground(mainSheetPostalHeaderCell, this._lightRedHexCode);
+            this.insertCommentToSheetCell(reportSheetCell, this._invalidPostalCodeComment);
+            this.insertHeaderComment(mainSheetPostalHeaderCell, this._invalidPostalCodeFoundHeaderComment);
+            this.setErrorColumns(reportSheetBinding, row);
+            }
+          });
+         }
+       });
+    this._reportSummaryComments.push(this._postalCodeColumnFoundAndValidationCheckRan);
+  } 
 
 }
 
@@ -728,31 +888,37 @@ class UserTemplate extends UsersNeedsAndAgenciesTemplate {
   }
   checkForDuplicateEmails(reportSheetBinding) { 
     let headerRow = 1;
-    let emailColumnRange = this.getColumnRange('Email', this._sheet);
-    let reportSheetEmailColumnRange = this.getColumnRange('Email', reportSheetBinding);
-    let emailColumnPosition = emailColumnRange.getColumn();
-    let beginningOfEmailColumnRange = emailColumnRange.getA1Notation().slice(0,2); //0,2 represents beginning cell for column range i.e.C1
-    let endOfEmailColumnRange = emailColumnRange.getA1Notation().slice(3); // slice 3 represents the end of the column range excluding the comma
-    const duplicateEmailsRuleMainSheet = SpreadsheetApp.newConditionalFormatRule()
-    .whenFormulaSatisfied(`=COUNTIF(${beginningOfEmailColumnRange}:${endOfEmailColumnRange}, ${beginningOfEmailColumnRange})>1`)
-    .setBackground(this._lightRedHexCode)
-    .setRanges([emailColumnRange])
-    .build();
-    let rules = this._sheet.getConditionalFormatRules();
-    rules.push(duplicateEmailsRuleMainSheet);
-    this._sheet.setConditionalFormatRules(rules);
+    this._emailColumnHeaderOptions.forEach((headerTitle) => {
+      let emailColumnRange = this.getColumnRange(headerTitle, this._sheet);
+      if (emailColumnRange) {
+        let reportSheetEmailColumnRange = this.getColumnRange(headerTitle, reportSheetBinding);
+        let emailColumnPosition = emailColumnRange.getColumn();
+        let beginningOfEmailColumnRange = emailColumnRange.getA1Notation().slice(0,2); //0,2 represents beginning cell for column range i.e.C1
+        let endOfEmailColumnRange = emailColumnRange.getA1Notation().slice(3); // slice 3 represents the end of the column range excluding the comma
+        const duplicateEmailsRuleMainSheet = SpreadsheetApp.newConditionalFormatRule()
+        .whenFormulaSatisfied(`=COUNTIF(${beginningOfEmailColumnRange}:${endOfEmailColumnRange}, ${beginningOfEmailColumnRange})>1`)
+        .setBackground(this._lightRedHexCode)
+        .setRanges([emailColumnRange])
+        .build();
+        let rules = this._sheet.getConditionalFormatRules();
+        rules.push(duplicateEmailsRuleMainSheet);
+        this._sheet.setConditionalFormatRules(rules);
 
-    const duplicateEmailsRuleReportSheet = SpreadsheetApp.newConditionalFormatRule()
-    .whenFormulaSatisfied(`=COUNTIF(${beginningOfEmailColumnRange}:${endOfEmailColumnRange}, ${beginningOfEmailColumnRange})>1`)
-    .setBackground(this._lightRedHexCode)
-    .setRanges([reportSheetEmailColumnRange])
-    .build();
+        const duplicateEmailsRuleReportSheet = SpreadsheetApp.newConditionalFormatRule()
+        .whenFormulaSatisfied(`=COUNTIF(${beginningOfEmailColumnRange}:${endOfEmailColumnRange}, ${beginningOfEmailColumnRange})>1`)
+        .setBackground(this._lightRedHexCode)
+        .setRanges([reportSheetEmailColumnRange])
+        .build();
 
-    let rules2 = reportSheetBinding.getConditionalFormatRules();
-    rules2.push(duplicateEmailsRuleReportSheet);
-    reportSheetBinding.setConditionalFormatRules(rules2);
-    reportSheetBinding.sort(emailColumnPosition, true);
-    this._sheet.sort(emailColumnPosition, true);
+        let rules2 = reportSheetBinding.getConditionalFormatRules();
+        rules2.push(duplicateEmailsRuleReportSheet);
+        reportSheetBinding.setConditionalFormatRules(rules2);
+        reportSheetBinding.sort(emailColumnPosition, true);
+        this._sheet.sort(emailColumnPosition, true);
+    
+      }
+    });
+    
     this._reportSummaryComments.push(this._foundEmailColumnAndCheckedForDuplicatesComment);
 
   }
@@ -761,32 +927,35 @@ class UserTemplate extends UsersNeedsAndAgenciesTemplate {
   }
   checkForDuplicateEmailsAndSetErrors(reportSheetBinding) {
     let headerRow = 1;
-    let emailColumnRange = this.getColumnRange('Email', this._sheet, this._columnHeaders);
-    let emailColumnValues = this.getValues(emailColumnRange);
-    let emailColumnPosition = emailColumnRange.getColumn();
+    this._emailColumnHeaderOptions.forEach((headerTitle) => {
+      let emailColumnRange = this.getColumnRange(headerTitle, this._sheet);
+      if (emailColumnRange) {
+        let emailColumnValues = this.getValues(emailColumnRange);
+        let emailColumnPosition = emailColumnRange.getColumn();
 
-    emailColumnValues.forEach((email, index) => {
-      let currentEmail = String(email).trim();
-      let row = index + 2;
-      let nextRow = row + 1;
-      let currentCell = this.getSheetCell(this._sheet, row, emailColumnPosition);
+        emailColumnValues.forEach((email, index) => {
+          let currentEmail = String(email).trim();
+          let row = index + 2;
+          let nextRow = row + 1;
+          let currentCell = this.getSheetCell(this._sheet, row, emailColumnPosition);
 
-        if (currentEmail.length > 0 && this.checkForLightRedHexCode(currentCell)) {
-          // let nextCell = this.getSheetCell(this._sheet, nextRow, emailColumnPosition);
-          let reportSheetCell = this.getSheetCell(reportSheetBinding, row, emailColumnPosition);
-          let nextReportSheetCell = this.getSheetCell(reportSheetBinding, nextRow, emailColumnPosition)
-          let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, emailColumnPosition);
-          this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
-          this.setSheetCellBackground(nextReportSheetCell, this._lightRedHexCode);
-          this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
-          this.insertCommentToSheetCell(reportSheetCell, this._duplicateEmailComment);
-          this.insertCommentToSheetCell(nextReportSheetCell, this._duplicateEmailComment);
-          this.insertHeaderComment(mainSheetHeaderCell, this._duplicateEmailsFoundMessage);
-          this.setErrorColumns(reportSheetBinding, row);
-          this.setErrorColumns(reportSheetBinding, nextRow);
-          }
+          if (currentEmail.length > 0 && this.checkForLightRedHexCode(currentCell)) {
+            // let nextCell = this.getSheetCell(this._sheet, nextRow, emailColumnPosition);
+            let reportSheetCell = this.getSheetCell(reportSheetBinding, row, emailColumnPosition);
+            let nextReportSheetCell = this.getSheetCell(reportSheetBinding, nextRow, emailColumnPosition)
+            let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, emailColumnPosition);
+            this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
+            this.setSheetCellBackground(nextReportSheetCell, this._lightRedHexCode);
+            this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
+            this.insertCommentToSheetCell(reportSheetCell, this._duplicateEmailComment);
+            this.insertCommentToSheetCell(nextReportSheetCell, this._duplicateEmailComment);
+            this.insertHeaderComment(mainSheetHeaderCell, this._duplicateEmailsFoundMessage);
+            this.setErrorColumns(reportSheetBinding, row);
+            this.setErrorColumns(reportSheetBinding, nextRow);
+            }
+          });
         }
-      );
+      });
 
       this._reportSummaryComments.push(this._ranCheckForDuplicateEmailsAndSetComments);
   }
@@ -854,82 +1023,37 @@ class UserTemplate extends UsersNeedsAndAgenciesTemplate {
   this._reportSummaryComments.push(this._foundFirstThreeColumnsAndCheckedForMissingValuesComment);
 
   }
-  formatUserDateAddedAndBirthdayColumns(reportSheetBinding) {
-  let row = 1;
-  let birthdayColumn = this.getColumnRange('Birthday (YYYY-MM-DD)', this._sheet);
-  let userDateAddedColumn = this.getColumnRange('User Date Added', this._sheet);
-
-  if (birthdayColumn && userDateAddedColumn) {
-      let birthdayColumnPosition = birthdayColumn.getColumn();
-      let reportSheetBirthdayColumnHeaderCell = this.getSheetCell(reportSheetBinding, row, birthdayColumnPosition);
-      let userDateAddedColumnPosition = userDateAddedColumn.getColumn();
-      let reportSheetUserDateAddedColumnHeaderCell = this.getSheetCell(reportSheetBinding, row, userDateAddedColumnPosition);
-
-      this.setColumnToYYYYMMDDFormat(birthdayColumn);
-      this.setColumnToYYYYMMDDFormat(userDateAddedColumn);
-      this.setSheetCellBackground(reportSheetBirthdayColumnHeaderCell, this._lightRedHexCode);
-      this.insertCommentToSheetCell(reportSheetBirthdayColumnHeaderCell, this._dateFormattedComment);
-      this.setSheetCellBackground(reportSheetUserDateAddedColumnHeaderCell, this._lightRedHexCode);
-      this.insertCommentToSheetCell(reportSheetUserDateAddedColumnHeaderCell, this._dateFormattedComment);
-      this._reportSummaryComments.push(this._foundFirstThreeColumnsAndCheckedForMissingValuesComment);
-
-  } else if (birthdayColumn) {
-      let birthdayColumnPosition = birthdayColumn.getColumn();
-      let reportSheetBirthdayColumnHeaderCell = this.getSheetCell(reportSheetBinding, row, birthdayColumnPosition);
-      this.setColumnToYYYYMMDDFormat(birthdayColumn);
-
-      this.setSheetCellBackground(reportSheetBirthdayColumnHeaderCell, this._lightGreenHexCode);
-      this.insertCommentToSheetCell(reportSheetBirthdayColumnHeaderCell, this._dateFormattedComment); 
-      this._reportSummaryComments.push(this._didNotFindUserDateAddedColumnButDidFindBirthdayColumnAndFormattedItComment);
-  } else if (userDateAddedColumn) {
-      let userDateAddedColumnPosition = userDateAddedColumn.getColumn();
-      let reportSheetUserDateAddedColumnHeaderCell = this.getSheetCell(reportSheetBinding, row, userDateAddedColumnPosition);
-
-      this.setColumnToYYYYMMDDFormat(userDateAddedColumn);
-      this.setSheetCellBackground(reportSheetUserDateAddedColumnHeaderCell, this._lightGreenHexCode);
-      this.insertCommentToSheetCell(reportSheetUserDateAddedColumnHeaderCell, this._dateFormattedComment);
-      this._reportSummaryComments.push(this._didNotFindBirthdayColumnButDidFindUserDateAddedColumnAndFormattedItComment);
-    }
-
-  }
   validateGenderOptions(reportSheetBinding) {
-    let genderOptionColumnRange = this.getColumnRange('Gender', this._sheet);
+    this._genderOptionsHeaderOptions.forEach((headerTitle) => {
+      let genderOptionColumnRange = this.getColumnRange(headerTitle, this._sheet);
+      if (genderOptionColumnRange) {
+        let genderOptionColumnRangeValues = this.getValues(genderOptionColumnRange);
 
-    if (genderOptionColumnRange) {
-      let genderOptionColumnRangeValues = this.getValues(genderOptionColumnRange);
-
-      let genderOptionColumnRangePoition = genderOptionColumnRange.getColumn();
-      
-      genderOptionColumnRangeValues.forEach((val, index) => {
-        let currentGenderOption = String(val).toLowerCase();
+        let genderOptionColumnRangePoition = genderOptionColumnRange.getColumn();
         
-        if (!this._fullGenderOptions.includes(currentGenderOption) && currentGenderOption.length !== 0) {
-          let headerRow = 1;
-          let row = index + 2;
-          let currentCell = this.getSheetCell(this._sheet, row, genderOptionColumnRangePoition);
-          let currentReportCell = this.getSheetCell(reportSheetBinding, row, genderOptionColumnRangePoition);
-          let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, genderOptionColumnRangePoition);
-          this.setSheetCellBackground(currentCell, this._lightRedHexCode);
-          this.setSheetCellBackground(currentReportCell, this._lightRedHexCode);
-          this.insertCommentToSheetCell(currentReportCell, this._invalidGenderOptionComment);
-          this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
-          this.insertHeaderComment(mainSheetHeaderCell, this._invalidGenderOptionsFoundHeaderComment);
-          this.setErrorColumns(reportSheetBinding, row);
+        genderOptionColumnRangeValues.forEach((val, index) => {
+          let currentGenderOption = String(val).toLowerCase();
+          
+          if (!this._fullGenderOptions.includes(currentGenderOption) && currentGenderOption.length !== 0) {
+            let headerRow = 1;
+            let row = index + 2;
+            let currentCell = this.getSheetCell(this._sheet, row, genderOptionColumnRangePoition);
+            let currentReportCell = this.getSheetCell(reportSheetBinding, row, genderOptionColumnRangePoition);
+            let mainSheetHeaderCell = this.getSheetCell(this._sheet, headerRow, genderOptionColumnRangePoition);
+            this.setSheetCellBackground(currentCell, this._lightRedHexCode);
+            this.setSheetCellBackground(currentReportCell, this._lightRedHexCode);
+            this.insertCommentToSheetCell(currentReportCell, this._invalidGenderOptionComment);
+            this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
+            this.insertHeaderComment(mainSheetHeaderCell, this._invalidGenderOptionsFoundHeaderComment);
+            this.setErrorColumns(reportSheetBinding, row);
 
-        }
-    });
+          }
+        });
+       }
+      });
 
     this._reportSummaryComments.push(this._foundGenderOptionsColumnAndRanCheckSuccessfullyComment);
-
-
-    } else {
-      this._reportSummaryComments.push(this._didNotFindGenderOptionsColumnAndRanCheckSuccessfullyComment);
-
-    }
-    
-
   }
-
 }
 
 // const WHITE_SPACE_REMOVED_COMMENT = 'Whitespace Removed'; //All templates TEMPLATE CLASS added
@@ -2036,12 +2160,19 @@ try {
   }
 
   try {
-    userImportTemplate.formatUserDateAddedAndBirthdayColumns(reportSheet);
+    userImportTemplate.formatAllDatedColumns(reportSheet);
   } catch(err) {
     Logger.log(err);
-    userImportTemplate.reportSummaryComments = userImportTemplate.failedFormatUserDateAddedAndBirthdayColumns; //User Only
-    throw new Error(`Check not ran for formatting of user date added and birthday columns. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+    userImportTemplate.reportSummaryComments = userImportTemplate.failedFormatDateColumns; //User Only
+    throw new Error(`Check not ran for formatting of dated columns. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
   }
+  try {
+      userImportTemplate.formatCommaSeparatedLists(reportSheet);
+    } catch (err) {
+        Logger.log(err);
+        userImportTemplate.reportSummaryComments = userImportTemplate.failedRemoveWhiteSpaceAndMissingValuesFromCommaSeparatedListsMessage;
+        throw new Error(`Did not remove whitespace and empty values from comma-separated list(s). Reason: ${err.name}: ${err.message} at line. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+    }
   
   try {
     userImportTemplate.convertStatesToTwoLetterCode(reportSheet);
@@ -2067,7 +2198,7 @@ try {
     throw new Error(`Check not ran for invalid gender options: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
   }
   
-  // capitalizeFirstLetterOfWords(sheet, reportSheet);
+  // // capitalizeFirstLetterOfWords(sheet, reportSheet);
 
   try {
     userImportTemplate.checkForInvalidEmails(reportSheet);
@@ -2089,7 +2220,7 @@ try {
     userImportTemplate.checkForInvalidNumbers(reportSheet);
   } catch(err) {
     Logger.log(err);
-    userImportTemplate.reportSummaryComments = userImportTemplate.failedCheckNotRanForInvalidHomeOrMobilePhoneNumbers; //Users Needs Agencies
+    userImportTemplate.reportSummaryComments = userImportTemplate.failedInvalidPhoneNumbersCheck; //Users Needs Agencies
     throw new Error(`Check not ran for invalid home or mobile phone numbers. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
   }
   
