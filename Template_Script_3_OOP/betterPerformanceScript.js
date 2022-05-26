@@ -274,7 +274,7 @@ class Template {
     return sheetCell.getComment() ? true: false;
   }
   insertCommentToSheetCell(sheetCell, comment) {
-    let currentComments = sheetCell.getComment().split(",").filter((val) => val.trim());
+    let currentComments = sheetCell.getComment().split(",").map((val) => val.trim());
     if (!currentComments.includes(comment)) {
       if (this.checkCellForComment(sheetCell)) {
       let previousComment = sheetCell.getComment();
@@ -309,7 +309,7 @@ class Template {
     return range.getValues();
   }
   insertHeaderComment(headerCell, commentToInsert) {
-    let currentComments = headerCell.getComment().split(",").filter((val) => val.trim());
+    let currentComments = headerCell.getComment().split(",").map((val) => val.trim());
     if (!currentComments.includes(commentToInsert)) {
       if (!this.checkCellForComment(headerCell)) {
         this.insertCommentToSheetCell(headerCell, commentToInsert);
@@ -317,6 +317,14 @@ class Template {
         this.insertCommentToSheetCell(headerCell, `, ${commentToInsert}`);
       }
     }
+  }
+  removeHeaderComments() {
+    const headerRow = 1;
+    this.columnHeaders.forEach((headerColumn, index) => {
+      let currentColumnPosition = index + 1;
+      let headerCell = this.getSheetCell(this._sheet, headerRow, currentColumnPosition);
+      headerCell.setComment("");
+    });
   }
   clearSheetSummaryColumn(sheetBinding) {
     let row = 1;
@@ -381,7 +389,7 @@ class Template {
   removeFormattingFromSheetCells() {
     let rowCount = this._values.length;
     let columnCount = this._values[0].length;
-    let searchRange = this._sheet.getRange(2, 1, rowCount, columnCount);
+    let searchRange = this._sheet.getRange(1, 1, rowCount, columnCount);
     searchRange.clearFormat();
 
     this._reportSummaryComments.push(this._removedFormattingSuccessMessage);
@@ -505,8 +513,8 @@ class Template {
               this.setSheetCellBackground(reportSheetCell, this._lightRedHexCode);
               this.setSheetCellBackground(currentCell, this._lightRedHexCode);
               this.setSheetCellBackground(mainSheetHeaderCell, this._lightRedHexCode);
-              this.insertCommentToSheetCell(reportSheetCell, this._invalidEmailCellMessag);
-              this.insertHeaderComment(mainSheetHeaderCell, this._invalidEmailCellMessag);
+              this.insertCommentToSheetCell(reportSheetCell, this._invalidEmailCellMessage);
+              this.insertHeaderComment(mainSheetHeaderCell, this._invalidEmailCellMessage);
               this.setErrorColumns(reportSheetBinding, row);
             }
           } else {
@@ -2249,7 +2257,7 @@ throw new Error(`An error occured the the user import template check did not suc
 // try {
   function onOpen() {
   let ui = SpreadsheetApp.getUi()
-  ui.createMenu('Import Teplate Checker').addItem('Check User Import Template', 'checkUserImportTemplate').addItem('Check Individual Hours Import Template', 'checkIndvImportTemplate').addItem('Check Responses and Hours Template', 'hoursAndResponsesCheck').addItem('Check Agencies/Programs Import Template', 'programsAndAgenciesTemplateCheck').addItem('Check Needs/Opportunities ImportTemplate', 'needsAndOpportunitiesTemplateCheck').addItem('User Groups Template Check', 'userGroupsTemplateCheck').addToUi();
+  ui.createMenu('Import Teplate Checker').addItem('Remove Header Cell Comments', 'removeHeaderCellComments').addItem('Check User Import Template', 'checkUserImportTemplate').addItem('Check Individual Hours Import Template', 'checkIndvImportTemplate').addItem('Check Responses and Hours Template', 'hoursAndResponsesCheck').addItem('Check Agencies/Programs Template', 'programsAndAgenciesTemplateCheck').addItem('Check Needs/Opportunities Template', 'needsAndOpportunitiesTemplateCheck').addItem('Check User Groups Template', 'userGroupsTemplateCheck').addToUi();
 }
 
 // } catch (err) {
