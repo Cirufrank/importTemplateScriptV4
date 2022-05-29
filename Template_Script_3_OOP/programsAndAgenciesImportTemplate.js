@@ -1,19 +1,3 @@
-/*
-
-Goals met:
-
-removed white space
-Check for invalid additional contact emails YASSSSS
-Checks for invalid emails 
-checks for missing required values (first four columns-this is position based and imports)
-
-
-Things to keep in mind:
-
-Need columns for singular email check to be titles "Email"
-
-This may be okay due to position being what matters in the future */
-
 class ProgramsAndAgenciesTemplate extends UsersNeedsAndAgenciesTemplate {
   constructor() {
     super();
@@ -101,6 +85,10 @@ class ProgramsAndAgenciesTemplate extends UsersNeedsAndAgenciesTemplate {
 
   }
 } 
+
+////////////////////////////////////////////////////////////
+//Runs the checks for the Programs/Agencies Import Template
+////////////////////////////////////////////////////////////
 
 try {
   function programsAndAgenciesTemplateCheck() {
@@ -198,9 +186,50 @@ try {
   } catch(err) {
     Logger.log(err);
     programsAndAgenciesTemplate.reportSummaryComments = programsAndAgenciesTemplate.failedInvalidPhoneNumbersCheck;
-    throw new Error(`Check not ran for invalid home or mobile phone numbers. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+    throw new Error(`Check not ran for invalid phone numbers. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
   }
-  
+  try {
+    programsAndAgenciesTemplate.checkForInvalidURL(reportSheet, 'general');
+  } catch(err) {
+    Logger.log(err);
+    programsAndAgenciesTemplate.reportSummaryComments = programsAndAgenciesTemplate.failedCheckNotRanForGeneralURL;
+    throw new Error(`Check not ran for invalid general URL. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
+  try {
+    programsAndAgenciesTemplate.checkForInvalidURL(reportSheet, 'youtube');
+  } catch(err) {
+    Logger.log(err);
+    programsAndAgenciesTemplate.reportSummaryComments = programsAndAgenciesTemplate.failedCheckNotRanForYouTubeLink;
+    throw new Error(`Check not ran for invalid YouTube link. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
+  try {
+    programsAndAgenciesTemplate.checkForInvalidURL(reportSheet, 'twitter');
+  } catch(err) {
+    Logger.log(err);
+    programsAndAgenciesTemplate.reportSummaryComments = programsAndAgenciesTemplate.failedCheckNotRanForTwitterLink;
+    throw new Error(`Check not ran for invalid Twitter link. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
+  try {
+    programsAndAgenciesTemplate.checkForInvalidURL(reportSheet, 'linkedin');
+  } catch(err) {
+    Logger.log(err);
+    programsAndAgenciesTemplate.reportSummaryComments = programsAndAgenciesTemplate.failedCheckNotRanForTwitterLink;
+    throw new Error(`Check not ran for invalid LinkedIn link. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
+  try {
+    programsAndAgenciesTemplate.checkForInvalidURL(reportSheet, 'instagram');
+  } catch(err) {
+    Logger.log(err);
+    programsAndAgenciesTemplate.reportSummaryComments = programsAndAgenciesTemplate.failedCheckNotRanForTwitterLink;
+    throw new Error(`Check not ran for invalid Instagram link. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
+  try {
+    programsAndAgenciesTemplate.checkForInvalidURL(reportSheet, 'facebook');
+  } catch(err) {
+    Logger.log(err);
+    programsAndAgenciesTemplate.reportSummaryComments = programsAndAgenciesTemplate.failedCheckNotRanForFacebookLink;
+    throw new Error(`Check not ran for invalid Facebook link. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
   try {
     programsAndAgenciesTemplate.setCommentsOnReportCell(reportSheet);
   } catch(err) {

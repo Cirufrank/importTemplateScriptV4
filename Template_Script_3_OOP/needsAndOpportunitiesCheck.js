@@ -57,6 +57,10 @@ class NeedsAndOpportunitiesTemplate extends UsersNeedsAndAgenciesTemplate {
     }
   }
   
+  ////////////////////////////////////////////////////////////
+  //Runs the checks for the Needs/Opportunities Import Template
+  ////////////////////////////////////////////////////////////
+  
   try {
     function needsAndOpportunitiesTemplateCheck() {
       const needsAndOpportunitiesTemplate = new NeedsAndOpportunitiesTemplate();
@@ -98,7 +102,7 @@ class NeedsAndOpportunitiesTemplate extends UsersNeedsAndAgenciesTemplate {
           } catch(err) {
               Logger.log(err);
               needsAndOpportunitiesTemplate.reportSummaryComments = needsAndOpportunitiesTemplate._failedFirstTwoColumnsMissingValuesCheckMessage;
-              throw new Error(`Check not ran for missing values within first four columns. Reason: ${err.name}: ${err.message}.  Please revert sheet to previous version, ensure the correct values are within the first four colums (i.e. "First Name, Last Name, and Email" is running a User Import Check [this would be for first three columns, but this checker is for four]), and try again. If this test does not work, record this error message, revert sheet to previous version, and contact developer to fix.`);
+              throw new Error(`Check not ran for missing values within first two columns. Reason: ${err.name}: ${err.message}.  Please revert sheet to previous version, ensure the correct values are within the first four colums (i.e. "First Name, Last Name, and Email" is running a User Import Check [this would be for first three columns, but this checker is for four]), and try again. If this test does not work, record this error message, revert sheet to previous version, and contact developer to fix.`);
           }
   
       try {
@@ -163,7 +167,7 @@ class NeedsAndOpportunitiesTemplate extends UsersNeedsAndAgenciesTemplate {
       throw new Error(`Report sheet cell comment not added for summary of checks. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
     }
   
-     SpreadsheetApp.getUi().alert("Needs/Opportunities Import Check Complete");
+     SpreadsheetApp.getUi().alert("Neeeds/Opportunities Import Check Complete");
     }
   
   } catch (err) {

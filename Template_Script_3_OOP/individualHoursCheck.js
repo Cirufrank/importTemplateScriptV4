@@ -1,28 +1,6 @@
-/*
-
-Goals Accomplished:
-
-Formats "Date Served column (relies on "Date Served" spelling
-checks for invalid email addresses
-Check for missing values in first threee (required columns)
-Inserts the individual hours records for us
-
-Things to keep in mind:
-Wanted the word "Individual" to be inserted during the time the required columsn are being checked so that the code doesn't have to be re-creatd with a idential function (also speeds up performance)
-
-The error column is an extra column down so when no "Hours Type" column is provided it does not clash with the errors colum (which is typcially inserted after the last row of values from the start (which would be before the indv values are created)
-
-Think about if it's be worth it do abstract the functionality out of the other function
-
-Things to keep in mind:
-
-Reliant on 'Date Served being spelled correctly for format to run'
-
-Anything in column 5 will be overriden
-
-re-wrote some function due to slightly custom needs with indv hours template checker
-
-*/
+////////////////////////////////////////////////////////////
+//Superclass of Hours/Responses Template
+////////////////////////////////////////////////////////////
 
 class IndividualHoursTemplate extends Template {
   constructor() {
@@ -40,6 +18,15 @@ class IndividualHoursTemplate extends Template {
       let headerRow = 1;
       this.getSheetCell(this._sheet, headerRow, this._individualHoursTypeColumnPosition).setValue('Hours Type');
     }
+
+////////////////////////////////////////////////////////////
+//Runs the checks for missing values when there are other 
+//values present within the first three columns, and 
+//also adds a 'Hours Type' column at the end of the sheet with 
+//the word "Individual" in the cell for every row that has 
+//values within in
+////////////////////////////////////////////////////////////
+
     checkFirstThreeColumnsForBlanksAndAddIndvColumn(reportSheetBinding) {
       let rowStartPosition = 2;
       let columnStartPosition = 1;
@@ -118,7 +105,10 @@ class IndividualHoursTemplate extends Template {
   
   }
 
-  
+////////////////////////////////////////////////////////////
+//Runs the checks for the Individual Hours Import Template
+////////////////////////////////////////////////////////////
+
   try {
   
     function checkIndvImportTemplate() {
