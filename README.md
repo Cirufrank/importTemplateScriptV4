@@ -4,8 +4,8 @@
 
 Are you a Data Specialist who's been tasked with checking import templates for clients? Wouldn't it be nice if a robot friend went ahead and did the ground work for you, leaving you with very little to check? Well look no further! I created this script to assist Galaxy Digital Data Specialists with checking clients' import templates, by automating the process.
 
-**Link download add-on:** <<place_link_here>></br>
-**Link documentation:** <<place_link_here>>
+**Link to download add-on:** <<place_link_here>></br>
+**Link to how-to-use-checker documentation:** <<place_link_here>>
 
 ![alt tag](<<place_link_here>>)
 
