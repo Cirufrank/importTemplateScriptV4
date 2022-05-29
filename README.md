@@ -1,6 +1,6 @@
 # Import Template Checker
 
-<iframe src="https://giphy.com/embed/aNqEFrYVnsS52" width="480" height="270" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/cat-brighten-yourlaptop-aNqEFrYVnsS52">via GIPHY</a></p>
+![](https://media.giphy.com/media/aNqEFrYVnsS52/giphy.gif)
 
 Are you a Data Specialist who's been tasked with checking import templates for clients? Wouldn't it be nice if a robot friend went ahead and did the ground work for you, leaving you with very little to check? Well look no further! I created this script to assist Galaxy Digital Data Specialists with checking clients' import template, but automating the process.
 
