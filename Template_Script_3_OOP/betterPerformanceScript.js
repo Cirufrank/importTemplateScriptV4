@@ -215,7 +215,7 @@ class Template {
       if (!this.checkCellForComment(headerCell)) {
         this.insertCommentToSheetCell(headerCell, commentToInsert);
       } else {
-        this.insertCommentToSheetCell(headerCell, `, ${commentToInsert}`);
+        this.insertCommentToSheetCell(headerCell, commentToInsert);
       }
     }
   }
@@ -227,26 +227,7 @@ class Template {
       headerCell.setComment("");
     });
   }
-  cleanHeaderComments() {
-    const headerRow = 1;
-    this.columnHeaders.forEach((headerColumn, index) => {
-      let currentColumnPosition = index + 1;
-      let headerCell = this.getSheetCell(this._sheet, headerRow, currentColumnPosition);
-      let headerComments = headerCell.getComment();
-      let arrayOfHeaderComments = String(headerComments).split(",");
-
-      if (arrayOfHeaderComments.length > 1) {
-        let headerCommentsNew = valueStringArray.filter((val) => val.trim().length > 0).map((val) => val.trim()).join(", ");
-        if (headerComments !== headerCommentsNew) {
-          headerCell.setComment(headerCommentsNew);
-          }
-        }
-      
-    });
-
-    //Push report comments to report summary comments
-  }
-
+  
   clearSheetSummaryColumn(sheetBinding) {
     let row = 1;
     const clearRange = () => {sheetBinding.getRange(row,this._reportSummaryColumnPosition, sheetBinding.getMaxRows()).clear();
