@@ -12,6 +12,8 @@ I used Google's App Script language and API to write methods that perform the co
 
 ![](importProgramsCheckGif.gif)
 
+![](importProgramsCheckGif.gif)
+
 ## Optimizations
 <ul>
   <li>De-duplicated code and made the checks more user-friendly by storing the potential titles of columns that need to be checked within an array, and having their check methods iterate through the potential titles within the array so that if multiple columns that need the same check are present, they are not missed, and this lets user not have to worry about varied columns titles. Additionally, through implementing this, I was able to remove multiple methods that performed checks based on a specific column title, and apply one method to all columns that contain certain header titles. </li>
