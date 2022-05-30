@@ -7,8 +7,6 @@ Are you a Data Specialist who's been tasked with checking import templates for c
 **Link to download add-on (GD Employees Only):** https://workspace.google.com/marketplace/app/import_template_checker/411770798065</br>
 **Link to how-to-use-checker documentation:** https://docs.google.com/document/d/1hiM0OKJjz4v8_APiDp_DMDcHhEulp79jSFUQ8o6yhSg/
 
-![alt tag](<<place_link_here>>)
-
 ## How It's Made:
 I used Google's App Script language and API to write methods that perform the core template checks whenever triggred by the press of a button. I used OOP to organize my code by creating a general template class and additional template classes for each type of template that needs to be checked. Each class contains the properties and methods needed by the templates to perform their checks, and methods are shared between templates by utilizing superclasses and subclasses. 
 
