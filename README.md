@@ -4,7 +4,7 @@
 
 Are you a Data Specialist who's been tasked with checking import templates for clients? Wouldn't it be nice if a robot friend went ahead and did most of the ground work for you, leaving you with very little to check? Well look no further! I created this script to assist Galaxy Digital Data Specialists with checking clients' import templates, by automating the process.
 
-**Link to download add-on (Gaalxy Digital Employees Only):** https://workspace.google.com/marketplace/app/import_template_checker/411770798065</br>
+**Link to download add-on (GD Employees Only):** https://workspace.google.com/marketplace/app/import_template_checker/411770798065</br>
 **Link to how-to-use-checker documentation:** <<place_link_here>>
 
 ![alt tag](<<place_link_here>>)
