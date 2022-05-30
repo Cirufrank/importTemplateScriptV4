@@ -10,7 +10,7 @@ Are you a Data Specialist who's been tasked with checking import templates for c
 ## How It's Made:
 I used Google's App Script language and API to write methods that perform the core template checks whenever triggred by the press of a button. I used OOP to organize my code by creating a general template class and additional template classes for each type of template that needs to be checked. Each class contains the properties and methods needed by the templates to perform their checks, and methods are shared between templates by utilizing superclasses and subclasses. 
 
-![](importProgramsCheckGif.gif)
+![](importScriptGif.gif)
 
 ![](importProgramsCheckGif.gif)
 
