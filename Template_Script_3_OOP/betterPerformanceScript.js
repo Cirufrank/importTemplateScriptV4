@@ -48,7 +48,7 @@ class Template {
     this._dateHeaderOptions = ['birthday (yyyy-mm-dd)', 'birthday', 'birth date', 'dob','d.o.b.', 'date of birth','need date', 'date', 'date served', 'date served  (yyyy-mm-dd)', 'date added', 'date added (yyyy-mm-dd)', 'user date added', 'opportunity date', 'response date (yyyy-mm-dd)', 'response date', 'date of response'];
     this._mutipleEmailsHeaderOptions = ['need contact emails', 'additional contacts (emails)', 'additional contacts', 'user group members (emails)', 'user group members', 'group members', 'leaders', 'user group leaders (emails)' , 'user group leaders', 'group leaders', 'user group leader', 'opportunity contact emails'];
     this._genderOptionsHeaderOptions = ['gender (male, female, other, prefer not to say)', 'gender', 'sex'];
-    this._commaSeparatedListCleanupHeaderOptions = ['tags (comma separated)', 'interests (comma seperated)', 'interests (comma separated)', 'tags', 'interests', 'additional contacts (emails)', 'need contact emails', 'user group members (emails)', 'user group members', 'group members', 'leaders', 'user group leaders (emails)' , 'user group leaders', 'group leaders', 'user group leader', 'allowed email domains', 'domains', 'allowed domains', 'allowed email domain', 'email domains', 'interests (comma separated)'];
+    this._commaSeparatedListCleanupHeaderOptions = ['tags (comma separated)', 'interests (comma seperated)', 'interests (comma separated)','tags', 'interests', 'additional contacts (emails)', 'need contact emails', 'user group members (emails)', 'user group members', 'group members', 'leaders', 'user group leaders (emails)' , 'user group leaders', 'group leaders', 'user group leader', 'allowed email domains', 'domains', 'allowed domains', 'allowed email domain', 'email domains'];
     this._reportSummaryColumnPosition = this._columnHeaders.length + 1;
     this._reportSummaryComments = [];
     
@@ -382,7 +382,7 @@ class Template {
 
 
           if (valueStringArray.length > 1) {
-            let valueStringNew = valueStringArray.filter((val) => val.trim().length > 0).map((val) => val.trim()).join(", ");
+            let valueStringNew = valueStringArray.filter((val) => val.trim().length > 0).map((val) => val.trim()).join(",");
             if (valueString !== valueStringNew) {
               let currentCell = this.getSheetCell(this._sheet, row, currentColumnPosition);
               let reportSheetHeaderCell = this.getSheetCell(reportSheetBinding, headerRow, currentColumnPosition);
@@ -473,6 +473,7 @@ class UsersNeedsAndAgenciesTemplate extends Template {
   constructor() {
     super();
     this._stateHeaderOptions = ['state','state (ex: nh)', 'state (e.g. tn)','need state', 'opportunity state'];
+    this._plainTextNumberFormat = `@STRING@`;
     this._phoneHeaderOptions = ['phone number', 'phone','mobile', 'cell phone', 'cell phone numbers','number','user phone','user phone number','home phone number','mobile phone number', 'mobile phone', 'cell phone number', 'mobile phone numbers', 'user phone numbers', 'user phone'];
     this._zipHeaderOptions = ['zipcode', 'zip code', 'postal','postal code', 'zip', 'zip codes', 'postal codes', 'user zip', 'user zip codes', 'user postal codes', 'user postal code', 'need zip', 'opportunity zip', 'opportunity zip code', 'need zip code', 'need postal code', 'opportunity postal code'];
     this._generalURLColumnOptions = ['website url', 'main site', 'webpage'];
@@ -673,7 +674,7 @@ class UsersNeedsAndAgenciesTemplate extends Template {
     return String(number)
       .toLowerCase()
       .match(
-    /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im
+    /^\s*(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})(?: *x(\d+))?\s*$/
       );
   }
 
@@ -789,6 +790,9 @@ class UsersNeedsAndAgenciesTemplate extends Template {
 
     this._reportSummaryComments.push(reportSummaryCommentToUse);
   }
+  setColumnToPlainTextNumerFormat(columnRangeBinding) { //ALL BUT PROGRAMS AND AGENCIES
+    columnRangeBinding.setNumberFormat(this._plainTextNumberFormat);
+  }
 
   checkForInvalidNumbers(reportSheetBinding) {
     let headerRow = 1;
@@ -826,6 +830,7 @@ class UsersNeedsAndAgenciesTemplate extends Template {
     this._zipHeaderOptions.forEach((headerTitle) => {
       let postalCodeColumnRange = this.getColumnRange(headerTitle, this._sheet);
       if (postalCodeColumnRange) {
+        this.setColumnToPlainTextNumerFormat(postalCodeColumnRange)
         let postalCodeColumnRangeValues = this.getValues(postalCodeColumnRange);
         let postalCodeColumnRangePosition = postalCodeColumnRange.getColumn();
         let mainSheetPostalHeaderCell = this.getSheetCell(this._sheet, headerRow, postalCodeColumnRangePosition);
@@ -1206,7 +1211,7 @@ throw new Error(`An error occured the the user import template check did not suc
 // Creates the "Template Check" menu and buttons within Spreadsheet UI
   function onOpen() {
   let ui = SpreadsheetApp.getUi()
-  ui.createMenu('Import Teplate Checker').addItem('Remove Header Cell Comments', 'removeHeaderCellComments').addItem('Check User Import Template', 'checkUserImportTemplate').addItem('Check Individual Hours Import Template', 'checkIndvImportTemplate').addItem('Check Responses and Hours Template', 'hoursAndResponsesCheck').addItem('Check Need/Opportunity Responses Import Template', 'needAndOpportunityResponsesCheck').addItem('Check Agencies/Programs Template', 'programsAndAgenciesTemplateCheck').addItem('Check Needs/Opportunities Template', 'needsAndOpportunitiesTemplateCheck').addItem('Check User Groups Template', 'userGroupsTemplateCheck').addToUi();
+  ui.createMenu('Import Teplate Checker').addItem('Remove Header Cell Comments', 'removeHeaderCellComments').addItem('Script Termination Page', 'openURL').addItem('Check User Import Template', 'checkUserImportTemplate').addItem('Check Individual Hours Import Template', 'checkIndvImportTemplate').addItem('Check Responses and Hours Template', 'hoursAndResponsesCheck').addItem('Check Need/Opportunity Responses Import Template', 'needAndOpportunityResponsesCheck').addItem('Check Agencies/Programs Template', 'programsAndAgenciesTemplateCheck').addItem('Check Needs/Opportunities Template', 'needsAndOpportunitiesTemplateCheck').addItem('Check User Groups Template', 'userGroupsTemplateCheck').addToUi();
 }
 
 

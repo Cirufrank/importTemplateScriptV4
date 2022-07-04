@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+   <base target="_blank">
+    <script>
+     const url1 ='https://script.google.com/home/executions';
+     const winRef = window.open(url1);
+     winRef ? google.script.host.close() : window.alert(`Allow popup to redirect you to ${url1}`) ;
+     window.onload=function(){document.getElementById('url').href = url1;}
+    </script>
+  </head>
+  <body>
+    Please click on the link below to be taken to the script controls page</br>
+    Make sure to press <b>Three dots > Teminate</b> on the running script to stop it</br>
+    <a id='url'>https://script.google.com/home/executions</a>
+  </body>
+</html>

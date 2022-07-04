@@ -3,8 +3,7 @@
 ////////////////////////////////////////////////////////////
 
 function removeHeaderCellComments() {
-    let template = new Template();
-    template.removeHeaderComments();
-    SpreadsheetApp.getUi().alert("Header comment removed");
-  }
-  
+  let template = new Template();
+  template.removeHeaderComments();
+  SpreadsheetApp.getUi().alert("Header comments removed");
+}

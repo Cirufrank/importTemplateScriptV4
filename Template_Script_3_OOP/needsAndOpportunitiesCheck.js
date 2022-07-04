@@ -120,6 +120,13 @@ try {
     needsAndOpportunitiesTemplate.reportSummaryComments = needsAndOpportunitiesTemplate.failedInvalidStatesCheckMessage;
     throw new Error(`Check not ran for invalid states: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
   }
+  try {
+    needsAndOpportunitiesTemplate.formatAllDatedColumns(reportSheet);
+  } catch(err) {
+    Logger.log(err);
+    needsAndOpportunitiesTemplate.reportSummaryComments = needsAndOpportunitiesTemplate.failedFormatDateColumns;
+    throw new Error(`Check not ran for formatting of dated columns. Reason: ${err.name}: ${err.message}. Please record this error message, revert sheet to previous version, and contact developer to fix.`);
+  }
 
   try {
     needsAndOpportunitiesTemplate.checkForInvalidEmails(reportSheet);
