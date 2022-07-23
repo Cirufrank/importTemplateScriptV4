@@ -320,6 +320,7 @@ class Template {
     this._emailColumnHeaderOptions.forEach((headerTitle) => {
       let emailColumnRange = this.getColumnRange(headerTitle, this._sheet);
       if (emailColumnRange) {
+        // emailColumnRange.setShowHyperlink(false);
         let emailColumnValues = this.getValues(emailColumnRange);
         let emailColumnPosition = emailColumnRange.getColumn();
 
@@ -613,7 +614,7 @@ class UsersNeedsAndAgenciesTemplate extends Template {
         let stateColumnRangeValues = this.getValues(stateColumnRange).map(val => {
           let currentState = String(val);
           if (currentState.length > 2) {
-            return (currentState[0].toUpperCase() + currentState.substr(1).toLowerCase());
+            return (currentState[0].toUpperCase() + currentState.slice(1).toLowerCase());
           } else {
             return currentState;
           }
@@ -649,7 +650,7 @@ class UsersNeedsAndAgenciesTemplate extends Template {
         let stateColumnRangePosition = stateColumnRange.getColumn();
         
         stateColumnRangeValues.forEach((val, index) => {
-          let currentState = String(val);
+          let currentState = String(val).toUpperCase();
           
           if (!this._usStateAbbreviations.includes(currentState) && currentState.length !== 0) {
             let headerRow = 1;
