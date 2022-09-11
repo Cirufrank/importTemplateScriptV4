@@ -16,7 +16,9 @@ I used Google's App Script language and API to write methods that perform the co
 <br/>
 
 ## **Please Note:** 
-The files within this repo are grouped logically within folders, however, Google App Script makes each file within a main script's variables and functions available to each other. This means within the App Script development environment, each file within this repo would not be contained in a folder, and no import or export statements would be needed in order to share the variables and functions between each file. Additionally, the .js files would all have an extension of .gs
+The files within this repo are grouped logically within folders, however, Google App Script makes each file within a main script's variables and functions available to each other. This means within the App Script development environment, each file within this repo would not be contained in a folder, and no import or export statements would be needed in order to share the variables and functions between each file. Additionally, the .js files would all have an extension of .gs. 
+
+To read more about creating a custom Google Sheets add-on, please refer to [Google's documentation here](https://developers.google.com/apps-script/add-ons/editors/sheets).
 <br/>
 
 ## Optimizations
