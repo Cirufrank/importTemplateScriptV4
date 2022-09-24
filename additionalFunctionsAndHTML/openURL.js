@@ -3,12 +3,11 @@
 ////////////////////////////////////////////////////////////
 
 function openURL() {
-    SpreadsheetApp.getUi()
-    //shows a modal dialogue box outputting the specified HTML
-     .showModalDialog(
-       //creates HTML output from the myURL.html file
-       HtmlService.createHtmlOutputFromFile('myURL').setHeight(100),
-       'Opening Script Logs'
-     )
-  }
-  
+  SpreadsheetApp.getUi()
+  //shows a modal dialogue box outputting the specified HTML
+   .showModalDialog(
+     //creates HTML output from the myURL.html file
+     HtmlService.createHtmlOutputFromFile('myURL').setHeight(100),
+     'Opening Script Logs'
+   )
+}
